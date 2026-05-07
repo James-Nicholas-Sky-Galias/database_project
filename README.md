@@ -19,7 +19,7 @@ npm install
 
 ### 3. Set up your environment variables
 ```bash
-cp .env.example .env
+copy .env.example .env
 ```
 Open `.env` and fill in your MySQL password if you have one. If you installed XAMPP with no password, leave `DB_PASSWORD` blank.
 
