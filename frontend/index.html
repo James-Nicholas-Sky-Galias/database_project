@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Jomitch Laundry Shop</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f3ee;
+    --surface: #ffffff;
+    --surface2: #f0ede6;
+    --border: #e0dbd0;
+    --text: #1a1814;
+    --muted: #7a746a;
+    --accent: #2d5a3d;
+    --accent-light: #e8f0eb;
+    --accent2: #c8873a;
+    --accent2-light: #fdf3e7;
+    --danger: #c0392b;
+    --danger-light: #fdf0ef;
+    --info: #1a4f8a;
+    --info-light: #eaf0f9;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 220px;
+    min-height: 100vh;
+    background: var(--accent);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    flex-shrink: 0;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+  }
+
+  .sidebar-logo {
+    padding: 28px 20px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+  }
+
+  .sidebar-logo h1 {
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    font-weight: 500;
+    color: #fff;
+    letter-spacing: 0.02em;
+    line-height: 1.3;
+  }
+
+  .sidebar-logo span {
+    font-size: 11px;
+    color: rgba(255,255,255,0.55);
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .sidebar-nav {
+    padding: 16px 10px;
+    flex: 1;
+  }
+
+  .nav-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.4);
+    padding: 4px 10px 8px;
+    font-weight: 500;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: rgba(255,255,255,0.7);
+    font-size: 14px;
+    font-weight: 400;
+    transition: background 0.15s, color 0.15s;
+    margin-bottom: 2px;
+  }
+
+  .nav-item:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-item.active { background: rgba(255,255,255,0.18); color: #fff; font-weight: 500; }
+  .nav-item svg { width: 16px; height: 16px; opacity: 0.8; flex-shrink: 0; }
+
+  /* ── Main ── */
+  .main {
+    margin-left: 220px;
+    flex: 1;
+    padding: 32px 36px;
+    min-height: 100vh;
+  }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .page-header {
+    margin-bottom: 28px;
+  }
+
+  .page-header h2 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  .page-header p {
+    font-size: 14px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ── Stat Cards ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+
+  .stat-card .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .stat-card .value {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: -0.02em;
+  }
+
+  /* ── Tables ── */
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .table-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .table-card-header h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  th {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    font-weight: 500;
+    padding: 10px 22px;
+    text-align: left;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 13px 22px;
+    font-size: 14px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg); }
+
+  /* ── Badges ── */
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.03em;
+  }
+
+  .badge-green { background: var(--accent-light); color: var(--accent); }
+  .badge-amber { background: var(--accent2-light); color: var(--accent2); }
+  .badge-red { background: var(--danger-light); color: var(--danger); }
+  .badge-blue { background: var(--info-light); color: var(--info); }
+  .badge-gray { background: var(--surface2); color: var(--muted); }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.15s, transform 0.1s;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .btn:hover { opacity: 0.88; }
+  .btn:active { transform: scale(0.98); }
+
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-danger { background: var(--danger); color: #fff; }
+
+  /* ── Forms / Modal ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 28px 32px;
+    width: 480px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal h3 {
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: var(--text);
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 6px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    border-color: var(--accent);
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 24px;
+  }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    background: var(--text);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 999;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+  }
+
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { background: var(--accent); }
+  .toast.error { background: var(--danger); }
+
+  /* ── Checkbox list for services ── */
+  .service-checkboxes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .service-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .service-check input[type=checkbox] { accent-color: var(--accent); }
+  .service-check:hover { border-color: var(--accent); background: var(--accent-light); }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+  .loading { text-align: center; padding: 32px; color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <span>Management System</span>
+    <h1>Jomitch<br>Laundry Shop</h1>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">Main</div>
+    <div class="nav-item active" onclick="navigate('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" onclick="navigate('customers')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Customers
+    </div>
+    <div class="nav-item" onclick="navigate('services')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      Services
+    </div>
+    <div class="nav-label" style="margin-top:12px">Transactions</div>
+    <div class="nav-item" onclick="navigate('orders')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/></svg>
+      Orders
+    </div>
+    <div class="nav-item" onclick="navigate('payments')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      Payments
+    </div>
+  </nav>
+</aside>
+
+<!-- Main Content -->
+<main class="main">
+
+  <!-- Dashboard -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-header">
+      <h2>Dashboard</h2>
+      <p>Overview of Jomitch Laundry Shop</p>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="label">Total Customers</div>
+        <div class="value" id="stat-customers">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Total Orders</div>
+        <div class="value" id="stat-orders">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Pending Orders</div>
+        <div class="value" id="stat-pending">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Services</div>
+        <div class="value" id="stat-services">—</div>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-card-header">
+        <h3>Recent Orders</h3>
+        <button class="btn btn-outline btn-sm" onclick="navigate('orders')">View all</button>
+      </div>
+      <table>
+        <thead><tr><th>Order ID</th><th>Customer</th><th>Weight (kg)</th><th>Status</th></tr></thead>
+        <tbody id="dashboard-orders"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Customers -->
+  <div class="page" id="page-customers">
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <h2>Customers</h2>
+        <p>Manage customer records and loyalty points</p>
+      </div>
+      <button class="btn btn-primary" onclick="openModal('modal-add-customer')">+ Add Customer</button>
+    </div>
+    <div class="table-card">
+      <table>
+        <thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Type</th><th>Loyalty Points</th></tr></thead>
+        <tbody id="customers-table"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Services -->
+  <div class="page" id="page-services">
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <h2>Services</h2>
+        <p>Available laundry services and pricing</p>
+      </div>
+      <button class="btn btn-primary" onclick="openModal('modal-add-service')">+ Add Service</button>
+    </div>
+    <div class="table-card">
+      <table>
+        <thead><tr><th>ID</th><th>Service Name</th><th>Regular Price</th><th>Student Price</th></tr></thead>
+        <tbody id="services-table"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Orders -->
+  <div class="page" id="page-orders">
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <h2>Orders</h2>
+        <p>Track and manage laundry orders</p>
+      </div>
+      <button class="btn btn-primary" onclick="openModal('modal-add-order')">+ New Order</button>
+    </div>
+    <div class="table-card">
+      <table>
+        <thead><tr><th>Order ID</th><th>Customer</th><th>Weight (kg)</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="orders-table"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Payments -->
+  <div class="page" id="page-payments">
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <h2>Payments</h2>
+        <p>Record payments for completed orders</p>
+      </div>
+      <button class="btn btn-primary" onclick="openModal('modal-add-payment')">+ Record Payment</button>
+    </div>
+    <div class="table-card">
+      <div class="table-card-header"><h3>Generate Invoice</h3></div>
+      <div style="padding: 20px 22px;">
+        <div style="display:flex;gap:12px;align-items:flex-end;">
+          <div style="flex:1">
+            <label style="font-size:12px;color:var(--muted);font-weight:500;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.07em;">Order ID</label>
+            <input type="number" id="invoice-order-id" placeholder="Enter order ID" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;" />
+          </div>
+          <div style="flex:1">
+            <label style="font-size:12px;color:var(--muted);font-weight:500;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.07em;">Amount to Pay (₱)</label>
+            <input type="number" id="invoice-amount" placeholder="0.00" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;" />
+          </div>
+          <button class="btn btn-primary" onclick="createInvoice()">Generate</button>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin-top:10px;">Last invoice ID: <span id="last-invoice-id" style="font-family:'DM Mono',monospace;font-weight:500;">—</span></p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Modals -->
+
+<!-- Add Customer -->
+<div class="modal-overlay" id="modal-add-customer">
+  <div class="modal">
+    <h3>Add New Customer</h3>
+    <div class="form-group">
+      <label>Full Name</label>
+      <input type="text" id="cus-name" placeholder="Juan dela Cruz" />
+    </div>
+    <div class="form-group">
+      <label>Phone Number</label>
+      <input type="text" id="cus-phone" placeholder="09171234567" />
+    </div>
+    <div class="form-group">
+      <label>Customer Type</label>
+      <select id="cus-type">
+        <option value="false">Regular</option>
+        <option value="true">Student</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-add-customer')">Cancel</button>
+      <button class="btn btn-primary" onclick="addCustomer()">Add Customer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Service -->
+<div class="modal-overlay" id="modal-add-service">
+  <div class="modal">
+    <h3>Add New Service</h3>
+    <div class="form-group">
+      <label>Service Name</label>
+      <input type="text" id="svc-name" placeholder="Wash & Dry" />
+    </div>
+    <div class="form-group">
+      <label>Regular Price (₱)</label>
+      <input type="number" id="svc-price" placeholder="80.00" />
+    </div>
+    <div class="form-group">
+      <label>Student Price (₱)</label>
+      <input type="number" id="svc-price-stud" placeholder="60.00" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-add-service')">Cancel</button>
+      <button class="btn btn-primary" onclick="addService()">Add Service</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Order -->
+<div class="modal-overlay" id="modal-add-order">
+  <div class="modal">
+    <h3>New Order</h3>
+    <div class="form-group">
+      <label>Customer</label>
+      <select id="order-customer"></select>
+    </div>
+    <div class="form-group">
+      <label>Load Weight (kg)</label>
+      <input type="number" id="order-weight" placeholder="3.5" step="0.1" />
+    </div>
+    <div class="form-group">
+      <label>Services</label>
+      <div class="service-checkboxes" id="order-services-list">
+        <p style="color:var(--muted);font-size:13px;">Loading services...</p>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-add-order')">Cancel</button>
+      <button class="btn btn-primary" onclick="createOrder()">Create Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- Record Payment -->
+<div class="modal-overlay" id="modal-add-payment">
+  <div class="modal">
+    <h3>Record Payment</h3>
+    <div class="form-group">
+      <label>Invoice ID</label>
+      <input type="number" id="pay-invoice-id" placeholder="1" />
+    </div>
+    <div class="form-group">
+      <label>Payment Method</label>
+      <select id="pay-method" onchange="togglePaymentFields()">
+        <option value="cash">Cash</option>
+        <option value="ewallet">E-Wallet / Card</option>
+      </select>
+    </div>
+    <div id="cash-fields">
+      <div class="form-group">
+        <label>Amount Paid (₱)</label>
+        <input type="number" id="pay-cash-amount" placeholder="0.00" />
+      </div>
+      <div class="form-group">
+        <label>Change Given (₱)</label>
+        <input type="number" id="pay-cash-change" placeholder="0.00" />
+      </div>
+    </div>
+    <div id="ewallet-fields" style="display:none">
+      <div class="form-group">
+        <label>Provider</label>
+        <select id="pay-provider">
+          <option>GCash</option>
+          <option>Maya</option>
+          <option>PayMaya</option>
+          <option>Credit Card</option>
+          <option>Debit Card</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Transaction ID</label>
+        <input type="number" id="pay-txn-id" placeholder="100001" />
+      </div>
+      <div class="form-group">
+        <label>Amount Paid (₱)</label>
+        <input type="number" id="pay-ewallet-amount" placeholder="0.00" />
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-add-payment')">Cancel</button>
+      <button class="btn btn-primary" onclick="recordPayment()">Record Payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = 'http://localhost:3001/api';
+
+  async function api(path, method = 'GET', body = null) {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(API + path, opts);
+    return res.json();
+  }
+
+  function toast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + type;
+    setTimeout(() => t.className = 'toast', 3000);
+  }
+
+  function navigate(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    event.currentTarget.classList.add('active');
+    loadPage(page);
+  }
+
+  function openModal(id) {
+    document.getElementById(id).classList.add('open');
+    if (id === 'modal-add-order') loadOrderModal();
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+  });
+
+  function togglePaymentFields() {
+    const method = document.getElementById('pay-method').value;
+    document.getElementById('cash-fields').style.display = method === 'cash' ? 'block' : 'none';
+    document.getElementById('ewallet-fields').style.display = method === 'ewallet' ? 'block' : 'none';
+  }
+
+  // ── Load Pages ──
+
+  async function loadPage(page) {
+    if (page === 'dashboard') loadDashboard();
+    if (page === 'customers') loadCustomers();
+    if (page === 'services') loadServices();
+    if (page === 'orders') loadOrders();
+  }
+
+  async function loadDashboard() {
+    const [customers, orders, services] = await Promise.all([
+      api('/customers'), api('/orders'), api('/services')
+    ]);
+    document.getElementById('stat-customers').textContent = customers.length ?? '—';
+    document.getElementById('stat-orders').textContent = orders.length ?? '—';
+    document.getElementById('stat-pending').textContent = orders.filter(o => !o.isDone).length;
+    document.getElementById('stat-services').textContent = services.length ?? '—';
+
+    const tbody = document.getElementById('dashboard-orders');
+    const recent = orders.slice(0, 6);
+    tbody.innerHTML = recent.length ? recent.map(o => `
+      <tr>
+        <td><span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--muted)">#${o.orderID}</span></td>
+        <td>${o.cusName}</td>
+        <td>${parseFloat(o.loadWeightKG).toFixed(1)}</td>
+        <td>${o.isDone ? '<span class="badge badge-green">Done</span>' : '<span class="badge badge-amber">Pending</span>'}</td>
+      </tr>`).join('') : '<tr><td colspan="4" class="empty-state">No orders yet</td></tr>';
+  }
+
+  async function loadCustomers() {
+    const data = await api('/customers');
+    const tbody = document.getElementById('customers-table');
+    tbody.innerHTML = data.length ? data.map(c => `
+      <tr>
+        <td><span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--muted)">${c.cusID}</span></td>
+        <td style="font-weight:500">${c.cusName}</td>
+        <td>${c.cusPhone || '—'}</td>
+        <td>${c.cusType ? '<span class="badge badge-blue">Student</span>' : '<span class="badge badge-gray">Regular</span>'}</td>
+        <td><span style="font-family:'DM Mono',monospace">${c.loyaltyPoints}</span> pts</td>
+      </tr>`).join('') : '<tr><td colspan="5" class="empty-state">No customers yet</td></tr>';
+  }
+
+  async function loadServices() {
+    const data = await api('/services');
+    const tbody = document.getElementById('services-table');
+    tbody.innerHTML = data.length ? data.map(s => `
+      <tr>
+        <td><span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--muted)">${s.serviceID}</span></td>
+        <td style="font-weight:500">${s.serviceName}</td>
+        <td>₱${parseFloat(s.servicePrice).toFixed(2)}</td>
+        <td>₱${parseFloat(s.servicePriceSTUD).toFixed(2)}</td>
+      </tr>`).join('') : '<tr><td colspan="4" class="empty-state">No services yet</td></tr>';
+  }
+
+  async function loadOrders() {
+    const data = await api('/orders');
+    const tbody = document.getElementById('orders-table');
+    tbody.innerHTML = data.length ? data.map(o => `
+      <tr>
+        <td><span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--muted)">#${o.orderID}</span></td>
+        <td style="font-weight:500">${o.cusName}</td>
+        <td>${parseFloat(o.loadWeightKG).toFixed(1)}</td>
+        <td>${o.isDone ? '<span class="badge badge-green">Done</span>' : '<span class="badge badge-amber">Pending</span>'}</td>
+        <td>${!o.isDone ? `<button class="btn btn-outline btn-sm" onclick="markDone(${o.orderID}, this)">Mark Done</button>` : '—'}</td>
+      </tr>`).join('') : '<tr><td colspan="5" class="empty-state">No orders yet</td></tr>';
+  }
+
+  async function loadOrderModal() {
+    const [customers, services] = await Promise.all([api('/customers'), api('/services')]);
+    const sel = document.getElementById('order-customer');
+    sel.innerHTML = customers.map(c => `<option value="${c.cusID}">${c.cusName} (${c.cusType ? 'Student' : 'Regular'})</option>`).join('');
+    const svcList = document.getElementById('order-services-list');
+    svcList.innerHTML = services.map(s => `
+      <label class="service-check">
+        <input type="checkbox" value="${s.serviceID}" />
+        ${s.serviceName}
+      </label>`).join('');
+  }
+
+  // ── Actions ──
+
+  async function addCustomer() {
+    const name = document.getElementById('cus-name').value.trim();
+    const phone = document.getElementById('cus-phone').value.trim();
+    const type = document.getElementById('cus-type').value === 'true';
+    if (!name) return toast('Please enter a name', 'error');
+    await api('/customers', 'POST', { cusName: name, cusPhone: phone, cusType: type, loyaltyPoints: 0 });
+    toast('Customer added!');
+    closeModal('modal-add-customer');
+    document.getElementById('cus-name').value = '';
+    document.getElementById('cus-phone').value = '';
+    loadCustomers();
+  }
+
+  async function addService() {
+    const name = document.getElementById('svc-name').value.trim();
+    const price = parseFloat(document.getElementById('svc-price').value);
+    const priceStud = parseFloat(document.getElementById('svc-price-stud').value);
+    if (!name || isNaN(price)) return toast('Please fill in all fields', 'error');
+    await api('/services', 'POST', { serviceName: name, servicePrice: price, servicePriceSTUD: priceStud });
+    toast('Service added!');
+    closeModal('modal-add-service');
+    document.getElementById('svc-name').value = '';
+    document.getElementById('svc-price').value = '';
+    document.getElementById('svc-price-stud').value = '';
+    loadServices();
+  }
+
+  async function createOrder() {
+    const cusID = parseInt(document.getElementById('order-customer').value);
+    const weight = parseFloat(document.getElementById('order-weight').value);
+    const checked = [...document.querySelectorAll('#order-services-list input:checked')].map(i => parseInt(i.value));
+    if (!weight) return toast('Please enter load weight', 'error');
+    const res = await api('/orders', 'POST', { cusID, loadWeightKG: weight, serviceIDs: checked });
+    toast(`Order #${res.orderID} created!`);
+    closeModal('modal-add-order');
+    document.getElementById('order-weight').value = '';
+    loadOrders();
+  }
+
+  async function markDone(orderID, btn) {
+    btn.disabled = true;
+    btn.textContent = '...';
+    await api(`/orders/${orderID}/done`, 'PATCH');
+    toast(`Order #${orderID} marked as done`);
+    loadOrders();
+  }
+
+  async function createInvoice() {
+    const orderID = parseInt(document.getElementById('invoice-order-id').value);
+    const amount = parseFloat(document.getElementById('invoice-amount').value);
+    if (!orderID || isNaN(amount)) return toast('Please fill in all fields', 'error');
+    const res = await api('/invoices', 'POST', { orderID, amountToPay: amount });
+    document.getElementById('last-invoice-id').textContent = res.invoiceID;
+    toast(`Invoice #${res.invoiceID} created!`);
+    document.getElementById('invoice-order-id').value = '';
+    document.getElementById('invoice-amount').value = '';
+  }
+
+  async function recordPayment() {
+    const invoiceID = parseInt(document.getElementById('pay-invoice-id').value);
+    const method = document.getElementById('pay-method').value;
+    if (!invoiceID) return toast('Please enter an invoice ID', 'error');
+    if (method === 'cash') {
+      const amountPaid = parseFloat(document.getElementById('pay-cash-amount').value);
+      const changeGiven = parseFloat(document.getElementById('pay-cash-change').value) || 0;
+      await api('/payments/cash', 'POST', { invoiceID, amountPaid, changeGiven });
+    } else {
+      const providerName = document.getElementById('pay-provider').value;
+      const transactionID = parseInt(document.getElementById('pay-txn-id').value);
+      const amountPaid = parseFloat(document.getElementById('pay-ewallet-amount').value);
+      await api('/payments/ewallet', 'POST', { invoiceID, providerName, transactionID, amountPaid });
+    }
+    toast('Payment recorded!');
+    closeModal('modal-add-payment');
+  }
+
+  // ── Init ──
+  loadDashboard();
+</script>
+</body>
+</html>
