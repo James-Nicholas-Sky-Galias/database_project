@@ -8,7 +8,7 @@
 
 ### 1. Clone the repo
 ```bash
-git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git
+git clone https://github.com/James-Nicholas-Sky-Galias/database_project.git
 cd backend
 ```
 
