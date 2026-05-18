@@ -1,870 +1,1042 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Jomitch Laundry Shop</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jomitch Laundry Shop - Operations System</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:#0b1c3a; --navy-mid:#102241; --navy-card:#14294d; --navy-btn:#1a3a6b;
+      --btn-hover:#204c8a; --accent-blue:#2e8bc0; --accent-cyan:#4cb8e4;
+      --text-white:#ffffff; --text-muted:#8ea8cc;
+      --border:rgba(255,255,255,0.08); --radius-btn:12px; --radius-card:16px;
+    }
+    body { font-family:'Barlow',sans-serif; background:var(--navy); color:var(--text-white); min-height:100vh; }
 
-  :root {
-    --bg: #f5f3ee;
-    --surface: #ffffff;
-    --surface2: #f0ede6;
-    --border: #e0dbd0;
-    --text: #1a1814;
-    --muted: #7a746a;
-    --accent: #2d5a3d;
-    --accent-light: #e8f0eb;
-    --accent2: #c8873a;
-    --accent2-light: #fdf3e7;
-    --danger: #c0392b;
-    --danger-light: #fdf0ef;
-    --info: #1a4f8a;
-    --info-light: #eaf0f9;
-    --radius: 10px;
-    --radius-lg: 16px;
-  }
+    /* Pages */
+    .page { display:none; min-height:100vh; } .page.active { display:block; }
 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-  }
+    /* Headers */
+    .header { background:#fff; border-radius:0 0 60% 60%/0 0 40px 40px; padding:6px 0 14px; text-align:center; }
+    .header-logo { height:90px; display:block; margin:0 auto; object-fit:contain; }
+    .subpage-header { background:#fff; padding:14px 20px 18px; display:flex; align-items:center; gap:14px; }
+    .subpage-title { font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--navy); }
+    .subpage-logo { height:48px; margin-left:auto; }
 
-  /* ── Sidebar ── */
-  .sidebar {
-    width: 220px;
-    min-height: 100vh;
-    background: var(--accent);
-    display: flex;
-    flex-direction: column;
-    padding: 0;
-    flex-shrink: 0;
-    position: fixed;
-    top: 0; left: 0; bottom: 0;
-  }
+    /* Buttons */
+    .back-btn { background:var(--navy); border:none; color:#fff; width:38px; height:38px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; transition:background .2s; }
+    .back-btn:hover { background:var(--navy-btn); }
+    .btn, .sec-btn, .place-order-btn, .cmode-btn, .add-batch-btn, .page-nav-btn {
+      border:none; cursor:pointer; font-family:'Barlow Condensed',sans-serif; font-weight:700; letter-spacing:.06em; text-transform:uppercase; transition:background .2s; color:#fff;
+    }
+    .btn { background:var(--navy-btn); border-radius:8px; padding:9px 14px; display:inline-flex; align-items:center; justify-content:center; gap:8px; font-size:13px; }
+    .btn:hover { background:var(--btn-hover); }
+    .sec-btn { background:var(--navy-btn); border-radius:var(--radius-btn); padding:14px 20px; font-size:16px; width:100%; }
+    .sec-btn:hover { background:var(--btn-hover); }
+    .place-order-btn { background:var(--navy-btn); border-radius:var(--radius-btn); padding:16px 24px; font-size:18px; width:100%; display:flex; align-items:center; justify-content:space-between; }
+    .place-order-btn:hover { background:var(--btn-hover); }
+    .place-order-btn .plus-icon { width:28px; height:28px; border:2px solid var(--text-muted); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; color:var(--text-muted); }
 
-  .sidebar-logo {
-    padding: 28px 20px 20px;
-    border-bottom: 1px solid rgba(255,255,255,0.12);
-  }
+    /* Layout */
+    .main { max-width:560px; margin:0 auto; padding:28px 20px 40px; }
+    .content-wrap { max-width:1100px; margin:0 auto; padding:24px 20px 40px; }
+    .top-row { display:grid; grid-template-columns:auto 1fr; gap:12px; margin-bottom:12px; align-items:stretch; }
+    .right-buttons { display:flex; flex-direction:column; gap:10px; }
 
-  .sidebar-logo h1 {
-    font-family: 'DM Mono', monospace;
-    font-size: 15px;
-    font-weight: 500;
-    color: #fff;
-    letter-spacing: 0.02em;
-    line-height: 1.3;
-  }
+    /* Date card */
+    .date-card { background:var(--navy-btn); border-radius:var(--radius-card); padding:14px 18px; text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:90px; }
+    .date-card .month { font-family:'Barlow Condensed',sans-serif; font-size:13px; letter-spacing:.2em; font-weight:700; color:var(--accent-cyan); text-transform:uppercase; }
+    .date-card .day { font-family:'Barlow Condensed',sans-serif; font-size:48px; font-weight:800; line-height:1; }
+    .date-card .weekday { font-family:'Barlow Condensed',sans-serif; font-size:11px; letter-spacing:.18em; font-weight:600; color:var(--text-muted); text-transform:uppercase; margin-top:2px; }
 
-  .sidebar-logo span {
-    font-size: 11px;
-    color: rgba(255,255,255,0.55);
-    font-weight: 400;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
+    /* Infoboard */
+    .infoboard { margin-top:30px; }
+    .infoboard-title { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:700; letter-spacing:.15em; text-align:center; text-transform:uppercase; margin-bottom:16px; }
+    .infoboard-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+    .info-card { background:var(--navy-btn); border-radius:var(--radius-card); padding:22px 16px 18px; text-align:center; cursor:pointer; transition:background .2s; }
+    .info-card:hover { background:var(--btn-hover); }
+    .info-card .info-number { font-family:'Barlow Condensed',sans-serif; font-size:54px; font-weight:800; line-height:1; }
+    .info-card .info-label { font-size:12px; color:var(--text-muted); margin-top:6px; font-weight:500; }
 
-  .sidebar-nav {
-    padding: 16px 10px;
-    flex: 1;
-  }
+    /* History menu */
+    .history-menu-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:8px; }
+    .history-menu-card { background:var(--navy-btn); border-radius:14px; padding:22px 18px; display:flex; align-items:center; gap:14px; cursor:pointer; transition:background .2s, transform .15s; border:none; color:#fff; text-align:left; width:100%; }
+    .history-menu-card:hover { background:var(--btn-hover); transform:translateY(-2px); }
+    .hmc-icon { width:44px; height:44px; border-radius:10px; background:rgba(76,184,228,.15); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .hmc-icon i { font-size:20px; color:var(--accent-cyan); }
+    .hmc-label { font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; line-height:1.2; }
 
-  .nav-label {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: rgba(255,255,255,0.4);
-    padding: 4px 10px 8px;
-    font-weight: 500;
-  }
+    /* Cards & tables */
+    .stat-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:18px; }
+    .card { background:var(--navy-card); border:1px solid var(--border); border-radius:var(--radius-card); padding:18px 20px; }
+    .card-label { font-size:11px; letter-spacing:.12em; color:var(--text-muted); text-transform:uppercase; margin-bottom:10px; }
+    .card-value { font-family:'Barlow Condensed',sans-serif; font-size:34px; font-weight:700; }
+    .table { width:100%; border-collapse:collapse; color:#fff; }
+    .table th, .table td { padding:10px 12px; border-bottom:1px solid var(--border); }
+    .table th { text-align:left; font-family:'Barlow Condensed',sans-serif; font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.12em; }
+    .table td { font-size:14px; color:#eef2ff; }
 
-  .nav-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    color: rgba(255,255,255,0.7);
-    font-size: 14px;
-    font-weight: 400;
-    transition: background 0.15s, color 0.15s;
-    margin-bottom: 2px;
-  }
+    /* Badges */
+    .badge { display:inline-flex; align-items:center; justify-content:center; padding:5px 11px; border-radius:999px; font-size:11px; letter-spacing:.05em; text-transform:uppercase; font-weight:600; }
+    .badge-pending { background:rgba(255,184,0,.18); color:#ffd166; }
+    .badge-done    { background:rgba(15,183,107,.18); color:#7cd2a8; }
+    .badge-student { background:rgba(63,128,255,.18); color:#98c5ff; }
+    .badge-regular { background:rgba(255,255,255,.08); color:#d1d8ff; }
+    .badge-paid    { background:rgba(15,183,107,.18); color:#7cd2a8; }
+    .badge-paylater{ background:rgba(255,184,0,.18); color:#ffd166; }
+    .badge-claim   { background:rgba(15,183,107,.18); color:#7cd2a8; }
+    .badge-earn    { background:rgba(255,184,0,.18); color:#ffd166; }
 
-  .nav-item:hover { background: rgba(255,255,255,0.1); color: #fff; }
-  .nav-item.active { background: rgba(255,255,255,0.18); color: #fff; font-weight: 500; }
-  .nav-item svg { width: 16px; height: 16px; opacity: 0.8; flex-shrink: 0; }
+    /* Forms */
+    .form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; align-items:flex-end; }
+    .field { display:grid; gap:8px; text-align:left; }
+    .field label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.08em; font-weight:600; }
+    .field input, .field select { width:100%; padding:11px 14px; border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#14294d; color:#fff; outline:none; font-family:'Barlow',sans-serif; font-size:14px; -webkit-appearance:none; appearance:none; }
+    .field select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238ea8cc' d='M6 8L0 0h12z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; padding-right:36px; cursor:pointer; }
+    .field select option, .filter-select option, .order-select option { background:#14294d; color:#fff; }
+    .field input::placeholder { color:rgba(255,255,255,.35); }
 
-  /* ── Main ── */
-  .main {
-    margin-left: 220px;
-    flex: 1;
-    padding: 32px 36px;
-    min-height: 100vh;
-  }
+    /* Toast */
+    .toast { position:fixed; bottom:24px; right:24px; background:var(--navy-card); border:1px solid rgba(255,255,255,.12); color:#fff; padding:14px 18px; border-radius:14px; box-shadow:0 16px 40px rgba(0,0,0,.4); opacity:0; transform:translateY(10px); transition:opacity .2s, transform .2s; z-index:20; font-size:14px; max-width:320px; }
+    .toast.show { opacity:1; transform:translateY(0); }
 
-  .page { display: none; }
-  .page.active { display: block; }
+    /* Filter / pagination */
+    .filter-bar { display:flex; gap:8px; align-items:center; margin-bottom:20px; flex-wrap:wrap; }
+    .filter-bar label { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-muted); white-space:nowrap; }
+    .filter-select { padding:9px 36px 9px 14px; border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#14294d url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238ea8cc' d='M6 8L0 0h12z'/%3E%3C/svg%3E") no-repeat right 12px center; color:#fff; font-family:'Barlow',sans-serif; font-size:14px; outline:none; cursor:pointer; -webkit-appearance:none; appearance:none; }
+    .pagination { display:flex; gap:12px; justify-content:center; align-items:center; margin-top:20px; }
+    .page-nav-btn { padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,.2); background:var(--navy-btn); font-size:13px; font-weight:600; }
+    .page-nav-btn:hover:not(:disabled) { background:var(--btn-hover); }
+    .page-nav-btn:disabled { background:rgba(255,255,255,.06); color:var(--text-muted); cursor:not-allowed; }
+    .page-info { font-family:'Barlow Condensed',sans-serif; font-weight:700; color:var(--accent-cyan); font-size:15px; }
 
-  .page-header {
-    margin-bottom: 28px;
-  }
+    /* Order form */
+    .order-field-btn { background:var(--navy-btn); border-radius:12px; padding:18px 22px; font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#fff; border:none; width:100%; text-align:left; cursor:default; display:flex; align-items:center; justify-content:space-between; }
+    .order-field-btn input[type=text], .order-field-btn input[type=number] { background:transparent; border:none; outline:none; color:#fff; font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; width:100%; padding:0; }
+    .order-field-btn input::placeholder { color:rgba(255,255,255,.45); font-weight:700; }
+    .order-grid   { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    .order-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .order-grid-name { display:grid; grid-template-columns:2fr 2fr 1fr; gap:10px; }
+    .order-select { background:transparent; border:none; outline:none; color:#fff; font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; -webkit-appearance:none; appearance:none; width:100%; }
+    .stepper-btn { background:none; border:none; color:#fff; font-size:18px; cursor:pointer; padding:2px 6px; line-height:1; }
+    .section-label { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+    .section-label i { color:var(--accent-cyan); }
 
-  .page-header h2 {
-    font-size: 22px;
-    font-weight: 600;
-    color: var(--text);
-    letter-spacing: -0.02em;
-  }
+    /* Customer mode toggle */
+    .cmode-toggle { display:flex; gap:10px; margin-bottom:14px; }
+    .cmode-btn { flex:1; background:var(--navy-btn); border:2px solid transparent; border-radius:10px; padding:11px; font-size:14px; color:var(--text-muted); }
+    .cmode-btn.active { border-color:var(--accent-cyan); color:#fff; background:rgba(76,184,228,.12); }
 
-  .page-header p {
-    font-size: 14px;
-    color: var(--muted);
-    margin-top: 4px;
-  }
+    /* Service checkboxes */
+    .svc-check-label { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,.06); cursor:pointer; }
+    .svc-check-label:last-child { border-bottom:none; }
+    .svc-cb { display:none; }
+    .svc-check-box { width:18px; height:18px; border:2px solid var(--text-muted); border-radius:4px; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .15s; }
+    .svc-cb:checked + .svc-check-box { background:var(--accent-cyan); border-color:var(--accent-cyan); }
+    .svc-cb:checked + .svc-check-box::after { content:'✓'; color:#fff; font-size:12px; font-weight:700; }
+    .svc-check-text { font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:700; letter-spacing:.06em; color:#fff; }
 
-  /* ── Stat Cards ── */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 14px;
-    margin-bottom: 28px;
-  }
+    /* Batch cards */
+    .batches-container { display:flex; flex-direction:column; gap:12px; margin-bottom:10px; }
+    .batch-card { background:rgba(26,58,107,.6); border:1px solid rgba(76,184,228,.25); border-radius:14px; overflow:hidden; transition:border-color .2s; }
+    .batch-card:focus-within { border-color:rgba(76,184,228,.5); }
+    .batch-header { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; background:rgba(76,184,228,.08); cursor:pointer; user-select:none; }
+    .batch-header-left, .batch-header-right { display:flex; align-items:center; gap:10px; }
+    .batch-number { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--accent-cyan); background:rgba(76,184,228,.12); padding:4px 10px; border-radius:6px; }
+    .batch-summary { font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:700; letter-spacing:.08em; color:var(--text-muted); }
+    .batch-price-badge { font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:800; color:var(--accent-cyan); }
+    .batch-remove-btn { background:rgba(192,57,43,.2); border:1px solid rgba(192,57,43,.4); color:#e87c6a; border-radius:6px; width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; transition:background .2s; }
+    .batch-remove-btn:hover { background:rgba(192,57,43,.4); }
+    .batch-toggle-icon { color:var(--text-muted); font-size:12px; transition:transform .2s; }
+    .batch-toggle-icon.open { transform:rotate(180deg); }
+    .batch-body { padding:16px 18px; border-top:1px solid rgba(255,255,255,.06); }
+    .batch-weight-row { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+    .batch-weight-input { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15); border-radius:10px; padding:10px 14px; color:#fff; font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:700; letter-spacing:.08em; outline:none; width:120px; transition:border-color .2s; }
+    .batch-weight-input:focus { border-color:var(--accent-cyan); }
+    .batch-load-count { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#ffd166; background:rgba(255,209,102,.1); border:1px solid rgba(255,209,102,.25); border-radius:6px; padding:4px 10px; white-space:nowrap; }
+    .batch-services { background:rgba(0,0,0,.15); border-radius:10px; padding:12px 16px; }
+    .batch-services-title { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px; }
+    .batch-notes-input { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); border-radius:10px; padding:10px 14px; color:#fff; font-family:'Barlow',sans-serif; font-size:13px; outline:none; width:100%; resize:none; margin-top:10px; transition:border-color .2s; }
+    .batch-notes-input:focus { border-color:rgba(76,184,228,.4); }
+    .batch-notes-input::placeholder { color:rgba(255,255,255,.3); }
+    .batch-other-price-field { display:none; margin-top:8px; padding:10px 0 4px; }
+    .other-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+    .other-label { font-size:12px; color:var(--text-muted); white-space:nowrap; letter-spacing:.08em; }
+    .batch-other-input { flex:1; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15); border-radius:8px; padding:8px 12px; color:#fff; font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:700; letter-spacing:.08em; outline:none; }
+    .batch-other-price-input { flex:1; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15); border-radius:8px; padding:8px 12px; color:var(--accent-cyan); font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:800; letter-spacing:.08em; outline:none; }
+    .add-batch-btn { background:rgba(76,184,228,.08); border:2px dashed rgba(76,184,228,.35); border-radius:12px; padding:14px; font-size:15px; letter-spacing:.12em; color:var(--accent-cyan); width:100%; display:flex; align-items:center; justify-content:center; gap:10px; transition:background .2s,border-color .2s; margin-bottom:10px; }
+    .add-batch-btn:hover { background:rgba(76,184,228,.15); border-color:rgba(76,184,228,.6); }
 
-  .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 18px 20px;
-  }
+    /* Order total & breakdown */
+    .order-total-bar { background:rgba(76,184,228,.08); border:1px solid rgba(76,184,228,.2); border-radius:12px; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .order-total-label { font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted); }
+    .order-total-details { display:flex; align-items:center; gap:16px; }
+    .order-total-weight { font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:700; color:var(--text-muted); }
+    .order-total-price { font-family:'Barlow Condensed',sans-serif; font-size:24px; font-weight:800; color:var(--accent-cyan); }
+    .batch-breakdown { display:flex; flex-direction:column; gap:4px; }
+    .batch-breakdown-row { display:flex; align-items:flex-start; gap:6px; font-size:11px; line-height:1.4; }
+    .batch-breakdown-num { font-family:'Barlow Condensed',sans-serif; font-weight:700; color:var(--accent-cyan); background:rgba(76,184,228,.12); border-radius:4px; padding:1px 6px; white-space:nowrap; flex-shrink:0; letter-spacing:.08em; }
+    .batch-breakdown-detail { color:var(--text-muted); }
+    .batch-breakdown-detail strong { color:#fff; font-weight:600; }
 
-  .stat-card .label {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--muted);
-    font-weight: 500;
-    margin-bottom: 8px;
-  }
+    /* Pay later */
+    .paylater-notice { background:rgba(255,209,102,.08); border:1px solid rgba(255,209,102,.25); border-radius:12px; padding:14px 18px; display:flex; align-items:center; gap:12px; margin-bottom:10px; }
 
-  .stat-card .value {
-    font-size: 28px;
-    font-weight: 600;
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    letter-spacing: -0.02em;
-  }
+    /* Loyalty status badges */
+    .loyalty-status-claim { display:inline-flex; align-items:center; gap:6px; background:rgba(15,183,107,.18); color:#7cd2a8; padding:6px 14px; border-radius:999px; font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+    .loyalty-status-earn  { display:inline-flex; align-items:center; gap:6px; background:rgba(255,184,0,.18);  color:#ffd166; padding:6px 14px; border-radius:999px; font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+    .loyalty-progress { display:flex; align-items:center; gap:8px; }
+    .loyalty-pts-box { background:rgba(76,184,228,.15); border-radius:8px; padding:4px 12px; font-family:'Barlow Condensed',sans-serif; font-size:18px; font-weight:800; color:var(--accent-cyan); }
+    .loyalty-credit-box { background:rgba(127,209,129,.15); border-radius:8px; padding:4px 12px; font-family:'Barlow Condensed',sans-serif; font-size:18px; font-weight:800; color:#7cd2a8; display:inline-block; }
 
-  /* ── Tables ── */
-  .table-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    margin-bottom: 24px;
-  }
+    /* Loyalty info banner */
+    .loyalty-info-banner { background:rgba(76,184,228,.06); border:1px solid rgba(76,184,228,.18); border-radius:14px; padding:16px 20px; margin-bottom:18px; display:flex; align-items:flex-start; gap:14px; }
+    .loyalty-info-icon { width:38px; height:38px; border-radius:10px; background:rgba(76,184,228,.15); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .loyalty-info-icon i { color:var(--accent-cyan); font-size:18px; }
+    .loyalty-info-text { font-size:13px; color:var(--text-muted); line-height:1.7; }
+    .loyalty-info-text strong { color:#fff; }
 
-  .table-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 18px 22px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .table-card-header h3 {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text);
-  }
-
-  table { width: 100%; border-collapse: collapse; }
-
-  th {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--muted);
-    font-weight: 500;
-    padding: 10px 22px;
-    text-align: left;
-    background: var(--surface2);
-    border-bottom: 1px solid var(--border);
-  }
-
-  td {
-    padding: 13px 22px;
-    font-size: 14px;
-    color: var(--text);
-    border-bottom: 1px solid var(--border);
-  }
-
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--bg); }
-
-  /* ── Badges ── */
-  .badge {
-    display: inline-block;
-    font-size: 11px;
-    font-weight: 500;
-    padding: 3px 10px;
-    border-radius: 20px;
-    letter-spacing: 0.03em;
-  }
-
-  .badge-green { background: var(--accent-light); color: var(--accent); }
-  .badge-amber { background: var(--accent2-light); color: var(--accent2); }
-  .badge-red { background: var(--danger-light); color: var(--danger); }
-  .badge-blue { background: var(--info-light); color: var(--info); }
-  .badge-gray { background: var(--surface2); color: var(--muted); }
-
-  /* ── Buttons ── */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 9px 18px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-    transition: opacity 0.15s, transform 0.1s;
-    font-family: 'DM Sans', sans-serif;
-  }
-
-  .btn:hover { opacity: 0.88; }
-  .btn:active { transform: scale(0.98); }
-
-  .btn-primary { background: var(--accent); color: #fff; }
-  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
-  .btn-sm { padding: 6px 12px; font-size: 12px; }
-  .btn-danger { background: var(--danger); color: #fff; }
-
-  /* ── Forms / Modal ── */
-  .modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.4);
-    z-index: 100;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .modal-overlay.open { display: flex; }
-
-  .modal {
-    background: var(--surface);
-    border-radius: var(--radius-lg);
-    padding: 28px 32px;
-    width: 480px;
-    max-width: 95vw;
-    max-height: 90vh;
-    overflow-y: auto;
-  }
-
-  .modal h3 {
-    font-size: 17px;
-    font-weight: 600;
-    margin-bottom: 20px;
-    color: var(--text);
-  }
-
-  .form-group {
-    margin-bottom: 16px;
-  }
-
-  .form-group label {
-    display: block;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    margin-bottom: 6px;
-  }
-
-  .form-group input,
-  .form-group select,
-  .form-group textarea {
-    width: 100%;
-    padding: 10px 14px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-size: 14px;
-    font-family: 'DM Sans', sans-serif;
-    background: var(--surface);
-    color: var(--text);
-    outline: none;
-    transition: border-color 0.15s;
-  }
-
-  .form-group input:focus,
-  .form-group select:focus,
-  .form-group textarea:focus {
-    border-color: var(--accent);
-  }
-
-  .modal-actions {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-    margin-top: 24px;
-  }
-
-  /* ── Toast ── */
-  .toast {
-    position: fixed;
-    bottom: 28px;
-    right: 28px;
-    background: var(--text);
-    color: #fff;
-    padding: 12px 20px;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 500;
-    z-index: 999;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: opacity 0.2s, transform 0.2s;
-    pointer-events: none;
-  }
-
-  .toast.show { opacity: 1; transform: translateY(0); }
-  .toast.success { background: var(--accent); }
-  .toast.error { background: var(--danger); }
-
-  /* ── Checkbox list for services ── */
-  .service-checkboxes {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-top: 4px;
-  }
-
-  .service-check {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 13px;
-    transition: border-color 0.15s, background 0.15s;
-  }
-
-  .service-check input[type=checkbox] { accent-color: var(--accent); }
-  .service-check:hover { border-color: var(--accent); background: var(--accent-light); }
-
-  .empty-state {
-    text-align: center;
-    padding: 40px;
-    color: var(--muted);
-    font-size: 14px;
-  }
-
-  .divider { height: 1px; background: var(--border); margin: 20px 0; }
-
-  .loading { text-align: center; padding: 32px; color: var(--muted); font-size: 14px; }
-</style>
+    /* Responsive */
+    @media (max-width:500px) {
+      .top-row { grid-template-columns:1fr; }
+      .date-card { flex-direction:row; gap:14px; min-width:unset; padding:12px 18px; }
+      .date-card .day { font-size:36px; }
+      .history-menu-grid, .infoboard-grid, .order-grid, .order-grid-2, .order-grid-name { grid-template-columns:1fr; }
+    }
+  </style>
 </head>
 <body>
 
-<!-- Sidebar -->
-<aside class="sidebar">
-  <div class="sidebar-logo">
-    <span>Management System</span>
-    <h1>Jomitch<br>Laundry Shop</h1>
-  </div>
-  <nav class="sidebar-nav">
-    <div class="nav-label">Main</div>
-    <div class="nav-item active" onclick="navigate('dashboard')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-      Dashboard
-    </div>
-    <div class="nav-item" onclick="navigate('customers')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      Customers
-    </div>
-    <div class="nav-item" onclick="navigate('services')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-      Services
-    </div>
-    <div class="nav-label" style="margin-top:12px">Transactions</div>
-    <div class="nav-item" onclick="navigate('orders')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/></svg>
-      Orders
-    </div>
-    <div class="nav-item" onclick="navigate('payments')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-      Payments
-    </div>
-  </nav>
-</aside>
-
-<!-- Main Content -->
-<main class="main">
-
-  <!-- Dashboard -->
-  <div class="page active" id="page-dashboard">
-    <div class="page-header">
-      <h2>Dashboard</h2>
-      <p>Overview of Jomitch Laundry Shop</p>
-    </div>
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="label">Total Customers</div>
-        <div class="value" id="stat-customers">—</div>
-      </div>
-      <div class="stat-card">
-        <div class="label">Total Orders</div>
-        <div class="value" id="stat-orders">—</div>
-      </div>
-      <div class="stat-card">
-        <div class="label">Pending Orders</div>
-        <div class="value" id="stat-pending">—</div>
-      </div>
-      <div class="stat-card">
-        <div class="label">Services</div>
-        <div class="value" id="stat-services">—</div>
-      </div>
-    </div>
-    <div class="table-card">
-      <div class="table-card-header">
-        <h3>Recent Orders</h3>
-        <button class="btn btn-outline btn-sm" onclick="navigate('orders')">View all</button>
-      </div>
-      <table>
-        <thead><tr><th>Order ID</th><th>Customer</th><th>Weight (kg)</th><th>Status</th></tr></thead>
-        <tbody id="dashboard-orders"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Customers -->
-  <div class="page" id="page-customers">
-    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
-      <div>
-        <h2>Customers</h2>
-        <p>Manage customer records and loyalty points</p>
-      </div>
-      <button class="btn btn-primary" onclick="openModal('modal-add-customer')">+ Add Customer</button>
-    </div>
-    <div class="table-card">
-      <table>
-        <thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Type</th><th>Loyalty Points</th></tr></thead>
-        <tbody id="customers-table"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Services -->
-  <div class="page" id="page-services">
-    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
-      <div>
-        <h2>Services</h2>
-        <p>Available laundry services and pricing</p>
-      </div>
-      <button class="btn btn-primary" onclick="openModal('modal-add-service')">+ Add Service</button>
-    </div>
-    <div class="table-card">
-      <table>
-        <thead><tr><th>ID</th><th>Service Name</th><th>Regular Price</th><th>Student Price</th></tr></thead>
-        <tbody id="services-table"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Orders -->
-  <div class="page" id="page-orders">
-    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
-      <div>
-        <h2>Orders</h2>
-        <p>Track and manage laundry orders</p>
-      </div>
-      <button class="btn btn-primary" onclick="openModal('modal-add-order')">+ New Order</button>
-    </div>
-    <div class="table-card">
-      <table>
-        <thead><tr><th>Order ID</th><th>Customer</th><th>Weight (kg)</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody id="orders-table"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Payments -->
-  <div class="page" id="page-payments">
-    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
-      <div>
-        <h2>Payments</h2>
-        <p>Record payments for completed orders</p>
-      </div>
-      <button class="btn btn-primary" onclick="openModal('modal-add-payment')">+ Record Payment</button>
-    </div>
-    <div class="table-card">
-      <div class="table-card-header"><h3>Generate Invoice</h3></div>
-      <div style="padding: 20px 22px;">
-        <div style="display:flex;gap:12px;align-items:flex-end;">
-          <div style="flex:1">
-            <label style="font-size:12px;color:var(--muted);font-weight:500;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.07em;">Order ID</label>
-            <input type="number" id="invoice-order-id" placeholder="Enter order ID" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;" />
-          </div>
-          <div style="flex:1">
-            <label style="font-size:12px;color:var(--muted);font-weight:500;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.07em;">Amount to Pay (₱)</label>
-            <input type="number" id="invoice-amount" placeholder="0.00" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;" />
-          </div>
-          <button class="btn btn-primary" onclick="createInvoice()">Generate</button>
+  <!-- HOME -->
+  <div id="page-home" class="page active">
+    <div class="header"><img class="header-logo" src="./logo.png" alt="Jomitch Laundry Shop"></div>
+    <div class="main">
+      <div class="top-row">
+        <div class="date-card">
+          <div class="month" id="date-month">MAY</div>
+          <div class="day" id="date-day">17</div>
+          <div class="weekday" id="date-weekday">SUNDAY</div>
         </div>
-        <p style="font-size:12px;color:var(--muted);margin-top:10px;">Last invoice ID: <span id="last-invoice-id" style="font-family:'DM Mono',monospace;font-weight:500;">—</span></p>
+        <div class="right-buttons">
+          <button class="place-order-btn" onclick="goTo('new-order')"><span>PLACE ORDER</span><span class="plus-icon">+</span></button>
+          <button class="sec-btn" onclick="goTo('history')">HISTORY</button>
+          <button class="sec-btn" onclick="goTo('orders')">ORDER MANAGEMENT</button>
+        </div>
+      </div>
+      <div class="infoboard">
+        <div class="infoboard-title">JOMITCH INFOBOARD</div>
+        <div class="infoboard-grid">
+          <div class="info-card" onclick="goTo('orders')"><div class="info-number" id="info-pickup-onsite">—</div><div class="info-label">To Pick Up Onsite</div></div>
+          <div class="info-card" onclick="goTo('orders')"><div class="info-number" id="info-delivery">—</div><div class="info-label">Delivery</div></div>
+          <div class="info-card" onclick="goTo('orders')"><div class="info-number" id="info-pickup-laundry">—</div><div class="info-label">To Pick Up Laundry</div></div>
+        </div>
       </div>
     </div>
   </div>
 
-</main>
-
-<!-- Modals -->
-
-<!-- Add Customer -->
-<div class="modal-overlay" id="modal-add-customer">
-  <div class="modal">
-    <h3>Add New Customer</h3>
-    <div class="form-group">
-      <label>Full Name</label>
-      <input type="text" id="cus-name" placeholder="Juan dela Cruz" />
+  <!-- HISTORY MENU -->
+  <div id="page-history" class="page">
+    <div class="subpage-header">
+      <button class="back-btn" onclick="goTo('home')"><i class="fa-solid fa-arrow-left"></i></button>
+      <span class="subpage-title">History</span>
+      <img class="subpage-logo" src="./logo.png" alt="Jomitch">
     </div>
-    <div class="form-group">
-      <label>Phone Number</label>
-      <input type="text" id="cus-phone" placeholder="09171234567" />
-    </div>
-    <div class="form-group">
-      <label>Customer Type</label>
-      <select id="cus-type">
-        <option value="false">Regular</option>
-        <option value="true">Student</option>
-      </select>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('modal-add-customer')">Cancel</button>
-      <button class="btn btn-primary" onclick="addCustomer()">Add Customer</button>
-    </div>
-  </div>
-</div>
-
-<!-- Add Service -->
-<div class="modal-overlay" id="modal-add-service">
-  <div class="modal">
-    <h3>Add New Service</h3>
-    <div class="form-group">
-      <label>Service Name</label>
-      <input type="text" id="svc-name" placeholder="Wash & Dry" />
-    </div>
-    <div class="form-group">
-      <label>Regular Price (₱)</label>
-      <input type="number" id="svc-price" placeholder="80.00" />
-    </div>
-    <div class="form-group">
-      <label>Student Price (₱)</label>
-      <input type="number" id="svc-price-stud" placeholder="60.00" />
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('modal-add-service')">Cancel</button>
-      <button class="btn btn-primary" onclick="addService()">Add Service</button>
-    </div>
-  </div>
-</div>
-
-<!-- Add Order -->
-<div class="modal-overlay" id="modal-add-order">
-  <div class="modal">
-    <h3>New Order</h3>
-    <div class="form-group">
-      <label>Customer</label>
-      <select id="order-customer"></select>
-    </div>
-    <div class="form-group">
-      <label>Load Weight (kg)</label>
-      <input type="number" id="order-weight" placeholder="3.5" step="0.1" />
-    </div>
-    <div class="form-group">
-      <label>Services</label>
-      <div class="service-checkboxes" id="order-services-list">
-        <p style="color:var(--muted);font-size:13px;">Loading services...</p>
+    <div class="content-wrap" style="max-width:560px;">
+      <div class="history-menu-grid">
+        <button class="history-menu-card" onclick="goTo('customers')"><div class="hmc-icon"><i class="fa-solid fa-users"></i></div><div class="hmc-label">Customer</div></button>
+        <button class="history-menu-card" onclick="goTo('sales')"><div class="hmc-icon"><i class="fa-solid fa-chart-line"></i></div><div class="hmc-label">Sales and Revenue Report</div></button>
+        <button class="history-menu-card" onclick="goTo('services')"><div class="hmc-icon"><i class="fa-solid fa-soap"></i></div><div class="hmc-label">Service</div></button>
+        <button class="history-menu-card" onclick="goTo('loyalty')"><div class="hmc-icon"><i class="fa-solid fa-star"></i></div><div class="hmc-label">Loyalty Program</div></button>
       </div>
     </div>
-    <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('modal-add-order')">Cancel</button>
-      <button class="btn btn-primary" onclick="createOrder()">Create Order</button>
+  </div>
+
+  <!-- CUSTOMERS -->
+  <div id="page-customers" class="page">
+    <div class="subpage-header">
+      <button class="back-btn" onclick="goTo('history')"><i class="fa-solid fa-arrow-left"></i></button>
+      <span class="subpage-title">Customers</span>
+    </div>
+    <div class="content-wrap">
+      <div class="card" style="overflow-x:auto;">
+        <table class="table">
+          <thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Address</th><th>Type</th><th>Points</th><th>Free Credits</th></tr></thead>
+          <tbody id="customers-tbody"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px;">Loading...</td></tr></tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <button class="page-nav-btn" id="cus-prev" onclick="cusPage(-1)">← Previous</button>
+        <span class="page-info" id="cus-info">Page 1 of 1</span>
+        <button class="page-nav-btn" id="cus-next" onclick="cusPage(1)">Next →</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Record Payment -->
-<div class="modal-overlay" id="modal-add-payment">
-  <div class="modal">
-    <h3>Record Payment</h3>
-    <div class="form-group">
-      <label>Invoice ID</label>
-      <input type="number" id="pay-invoice-id" placeholder="1" />
+  <!-- SERVICES -->
+  <div id="page-services" class="page">
+    <div class="subpage-header">
+      <button class="back-btn" onclick="goTo('history')"><i class="fa-solid fa-arrow-left"></i></button>
+      <span class="subpage-title">Services</span>
     </div>
-    <div class="form-group">
-      <label>Payment Method</label>
-      <select id="pay-method" onchange="togglePaymentFields()">
-        <option value="cash">Cash</option>
-        <option value="ewallet">E-Wallet / Card</option>
-      </select>
-    </div>
-    <div id="cash-fields">
-      <div class="form-group">
-        <label>Amount Paid (₱)</label>
-        <input type="number" id="pay-cash-amount" placeholder="0.00" />
+    <div class="content-wrap">
+      <div class="card" style="margin-bottom:16px;overflow-x:auto;">
+        <table class="table">
+          <thead><tr><th>ID</th><th>Name</th><th>Regular Price</th><th>Student Price</th><th>Action</th></tr></thead>
+          <tbody id="services-tbody"></tbody>
+        </table>
       </div>
-      <div class="form-group">
-        <label>Change Given (₱)</label>
-        <input type="number" id="pay-cash-change" placeholder="0.00" />
+      <div class="pagination">
+        <button class="page-nav-btn" id="svc-prev" onclick="svcPage(-1)">← Previous</button>
+        <span class="page-info" id="svc-info">Page 1 of 1</span>
+        <button class="page-nav-btn" id="svc-next" onclick="svcPage(1)">Next →</button>
+      </div>
+      <div class="card" style="margin-top:20px;">
+        <div class="card-label" style="margin-bottom:14px;">Add New Service</div>
+        <div class="form-grid">
+          <div class="field"><label>Service Name</label><input type="text" id="svc-name" placeholder="Wash & Dry"></div>
+          <div class="field"><label>Regular Price</label><input type="number" id="svc-price" step="0.01" placeholder="80"></div>
+          <div class="field"><label>Student Price</label><input type="number" id="svc-price-stud" step="0.01" placeholder="60"></div>
+        </div>
+        <button class="btn" style="margin-top:16px;padding:12px 24px;font-size:15px;" onclick="createService()">Save Service</button>
       </div>
     </div>
-    <div id="ewallet-fields" style="display:none">
-      <div class="form-group">
-        <label>Provider</label>
-        <select id="pay-provider">
-          <option>GCash</option>
-          <option>Maya</option>
-          <option>PayMaya</option>
-          <option>Credit Card</option>
-          <option>Debit Card</option>
+  </div>
+
+  <!-- LOYALTY -->
+  <div id="page-loyalty" class="page">
+    <div class="subpage-header">
+      <button class="back-btn" onclick="goTo('history')"><i class="fa-solid fa-arrow-left"></i></button>
+      <span class="subpage-title">Loyalty Program</span>
+    </div>
+    <div class="content-wrap">
+
+      <div class="card" style="overflow-x:auto;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Current Points</th>
+              <th>Claimable Free Wash</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="loyalty-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="pagination">
+        <button class="page-nav-btn" id="loy-prev" onclick="loyPage(-1)">← Previous</button>
+        <span class="page-info" id="loy-info">Page 1 of 1</span>
+        <button class="page-nav-btn" id="loy-next" onclick="loyPage(1)">Next →</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SALES -->
+  <div id="page-sales" class="page">
+    <div class="subpage-header">
+      <button class="back-btn" onclick="goTo('history')"><i class="fa-solid fa-arrow-left"></i></button>
+      <span class="subpage-title">Sales &amp; Revenue</span>
+    </div>
+    <div class="content-wrap">
+      <div class="filter-bar">
+        <label>Filter by date:</label>
+        <select class="filter-select" id="revenue-filter" onchange="renderSales()">
+          <option value="all">All</option><option value="today">Today</option>
+          <option value="yesterday">Yesterday</option><option value="week">Past Week</option>
+          <option value="month">Past Month</option><option value="year">Past Year</option>
         </select>
       </div>
-      <div class="form-group">
-        <label>Transaction ID</label>
-        <input type="number" id="pay-txn-id" placeholder="100001" />
+      <div class="stat-row" id="sales-stats"></div>
+      <div style="overflow-x:auto;">
+        <table class="table">
+          <thead><tr><th>Invoice ID</th><th>Date</th><th>Customer</th><th>Phone</th><th>Amount</th><th>Weight</th><th>Payment</th></tr></thead>
+          <tbody id="sales-tbody"></tbody>
+        </table>
       </div>
-      <div class="form-group">
-        <label>Amount Paid (₱)</label>
-        <input type="number" id="pay-ewallet-amount" placeholder="0.00" />
+      <div class="pagination">
+        <button class="page-nav-btn" id="inv-prev" onclick="invPage(-1)">← Previous</button>
+        <span class="page-info" id="inv-info">Page 1 of 1</span>
+        <button class="page-nav-btn" id="inv-next" onclick="invPage(1)">Next →</button>
       </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('modal-add-payment')">Cancel</button>
-      <button class="btn btn-primary" onclick="recordPayment()">Record Payment</button>
     </div>
   </div>
-</div>
 
-<!-- Toast -->
-<div class="toast" id="toast"></div>
+  <!-- ORDERS -->
+  <div id="page-orders" class="page">
+    <div class="subpage-header">
+      <button class="back-btn" onclick="goTo('home')"><i class="fa-solid fa-arrow-left"></i></button>
+      <span class="subpage-title">Order Management</span>
+    </div>
+    <div class="content-wrap">
+      <div class="stat-row" id="order-stats"></div>
+      <div style="overflow-x:auto;">
+        <table class="table">
+          <thead><tr><th>Order ID</th><th>Customer</th><th>Batches</th><th>Total Weight</th><th>Total Price</th><th>Delivery</th><th>Status / Payment</th><th>Actions</th><th>Delete</th></tr></thead>
+          <tbody id="orders-tbody"></tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <button class="page-nav-btn" id="ord-prev" onclick="ordPage(-1)">← Previous</button>
+        <span class="page-info" id="ord-info">Page 1 of 1</span>
+        <button class="page-nav-btn" id="ord-next" onclick="ordPage(1)">Next →</button>
+      </div>
+    </div>
+  </div>
 
-<script>
-  const API = 'http://localhost:3001/api';
+  <!-- NEW ORDER -->
+  <div id="page-new-order" class="page">
+    <div class="subpage-header">
+      <button class="back-btn" onclick="goTo('home')"><i class="fa-solid fa-arrow-left"></i></button>
+      <span class="subpage-title">Place Order</span>
+    </div>
+    <div class="content-wrap" style="max-width:760px;">
 
-  async function api(path, method = 'GET', body = null) {
-    const opts = { method, headers: { 'Content-Type': 'application/json' } };
-    if (body) opts.body = JSON.stringify(body);
-    const res = await fetch(API + path, opts);
-    return res.json();
-  }
+      <div class="cmode-toggle">
+        <button class="cmode-btn active" id="cmode-existing-btn" onclick="selectCustomerMode('existing')">Existing Customer</button>
+        <button class="cmode-btn" id="cmode-new-btn" onclick="selectCustomerMode('new')">New Customer</button>
+      </div>
 
-  function toast(msg, type = 'success') {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.className = 'toast show ' + type;
-    setTimeout(() => t.className = 'toast', 3000);
-  }
+      <div id="existing-customer-section">
+        <div class="order-grid-2" style="margin-bottom:10px;">
+          <div class="order-field-btn"><input type="text" id="customer-name-existing" placeholder="FULL NAME"></div>
+          <button class="btn" style="background:var(--accent-blue);font-size:14px;border-radius:12px;padding:0 16px;" onclick="lookupCustomerByName()"><i class="fa-solid fa-magnifying-glass"></i> FIND CUSTOMER</button>
+        </div>
+        <div id="customer-search-status" style="font-size:13px;color:var(--text-muted);margin-bottom:10px;min-height:18px;"></div>
+        <input type="hidden" id="existing-customer-id">
+        <div id="existing-customer-details" style="display:none;">
+          <div class="order-grid-name" style="margin-bottom:10px;">
+            <div class="order-field-btn"><input type="text" id="customer-phone-existing" placeholder="PHONE NUMBER"></div>
+            <div class="order-field-btn"><input type="text" id="customer-address-existing" placeholder="ADDRESS"></div>
+            <div class="order-field-btn" style="justify-content:space-between;">
+              <span style="font-size:13px;color:var(--text-muted);white-space:nowrap;margin-right:6px;">TYPE</span>
+              <select class="order-select" id="customer-type-existing" onchange="refreshAllBatchPrices()">
+                <option value="regular">REGULAR</option><option value="student">STUDENT</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
 
-  function navigate(page) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.getElementById('page-' + page).classList.add('active');
-    event.currentTarget.classList.add('active');
-    loadPage(page);
-  }
+      <div id="new-customer-section" style="display:none;">
+        <div class="order-grid-name" style="margin-bottom:10px;">
+          <div class="order-field-btn"><input type="text" id="customer-fname" placeholder="FIRST NAME"></div>
+          <div class="order-field-btn"><input type="text" id="customer-lname" placeholder="LAST NAME"></div>
+          <div class="order-field-btn"><input type="text" id="customer-mi" placeholder="M.I."></div>
+        </div>
+        <div class="order-grid" style="margin-bottom:10px;">
+          <div class="order-field-btn" style="grid-column:span 2/span 2;"><input type="text" id="customer-address-new" placeholder="ADDRESS" style="width:100%;"></div>
+          <div class="order-field-btn"><input type="text" id="customer-phone-new" placeholder="PHONE NUMBER"></div>
+        </div>
+        <div class="order-grid-2" style="margin-bottom:10px;">
+          <div class="order-field-btn" style="justify-content:space-between;">
+            <span style="font-size:13px;color:var(--text-muted);white-space:nowrap;margin-right:8px;">CUSTOMER TYPE</span>
+            <select class="order-select" id="customer-type-new" onchange="refreshAllBatchPrices()">
+              <option value="regular">REGULAR</option><option value="student">STUDENT</option>
+            </select>
+          </div>
+          <div></div>
+        </div>
+      </div>
 
-  function openModal(id) {
-    document.getElementById(id).classList.add('open');
-    if (id === 'modal-add-order') loadOrderModal();
-  }
+      <div style="margin-bottom:6px;">
+        <div class="section-label"><i class="fa-solid fa-layer-group"></i>LAUNDRY BATCHES</div>
+        <div class="batches-container" id="batches-container"></div>
+        <button class="add-batch-btn" onclick="addBatch()"><i class="fa-solid fa-plus"></i> ADD ANOTHER BATCH</button>
+      </div>
 
-  function closeModal(id) {
-    document.getElementById(id).classList.remove('open');
-  }
+      <div class="order-total-bar">
+        <span class="order-total-label"><i class="fa-solid fa-sigma" style="margin-right:6px;"></i>Order Total</span>
+        <div class="order-total-details">
+          <span class="order-total-weight" id="total-weight-display">0.0 kg total</span>
+          <span class="order-total-price" id="total-price-display">₱0.00</span>
+        </div>
+      </div>
 
-  document.querySelectorAll('.modal-overlay').forEach(m => {
-    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
-  });
+      <div class="order-grid" style="margin-bottom:10px;">
+        <div class="order-field-btn" style="align-items:center;">
+          <span style="margin-right:auto;">TO DELIVER: <span id="deliver-status-span">NO</span></span>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+            <button class="stepper-btn" onclick="setDelivery(true)">▲</button>
+            <button class="stepper-btn" onclick="setDelivery(false)">▼</button>
+          </div>
+        </div>
+        <div class="order-field-btn" style="flex-direction:column;align-items:flex-start;gap:4px;cursor:default;">
+          <span style="font-size:11px;color:var(--text-muted);letter-spacing:.08em;">DATE TO DELIVER/PICKUP:</span>
+          <input type="date" id="order-date" style="background:transparent;border:none;outline:none;color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;width:100%;padding:0;cursor:pointer;">
+        </div>
+        <div class="order-field-btn" style="flex-direction:column;align-items:flex-start;gap:4px;cursor:default;">
+          <span style="font-size:11px;color:var(--text-muted);letter-spacing:.08em;">TIME TO DELIVER/PICKUP:</span>
+          <input type="time" id="order-time" style="background:transparent;border:none;outline:none;color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;width:100%;padding:0;cursor:pointer;">
+        </div>
+      </div>
 
-  function togglePaymentFields() {
-    const method = document.getElementById('pay-method').value;
-    document.getElementById('cash-fields').style.display = method === 'cash' ? 'block' : 'none';
-    document.getElementById('ewallet-fields').style.display = method === 'ewallet' ? 'block' : 'none';
-  }
+      <div id="delivery-address-field" style="display:none;margin-bottom:10px;">
+        <div class="order-field-btn"><input type="text" id="delivery-address" placeholder="DELIVERY ADDRESS" style="width:100%;"></div>
+      </div>
 
-  // ── Load Pages ──
+      <div style="margin-bottom:10px;">
+        <div class="order-field-btn" style="flex-direction:column;align-items:flex-start;gap:6px;cursor:default;">
+          <span style="font-size:11px;color:var(--text-muted);letter-spacing:.08em;">SPECIAL INSTRUCTIONS (OPTIONAL)</span>
+          <textarea id="special-instructions" placeholder="e.g. Separate white clothes, use unscented detergent…" style="background:transparent;border:none;outline:none;color:#fff;font-family:'Barlow',sans-serif;font-size:13px;width:100%;resize:none;min-height:54px;line-height:1.5;" rows="2"></textarea>
+        </div>
+      </div>
 
-  async function loadPage(page) {
-    if (page === 'dashboard') loadDashboard();
-    if (page === 'customers') loadCustomers();
-    if (page === 'services') loadServices();
-    if (page === 'orders') loadOrders();
-  }
+      <div class="order-grid-2" style="margin-bottom:10px;">
+        <div class="order-field-btn" style="justify-content:space-between;">
+          <span style="color:var(--text-muted);font-size:13px;margin-right:8px;white-space:nowrap;">PAYMENT</span>
+          <select class="order-select" id="payment-method" onchange="togglePaymentFields()">
+            <option value="cash">CASH</option><option value="ewallet">E-WALLET / CARD</option><option value="paylater">PAY LATER</option>
+          </select>
+        </div>
+        <div id="cash-amount-field">
+          <div class="order-field-btn">
+            <span style="color:var(--text-muted);font-size:13px;margin-right:10px;white-space:nowrap;">AMOUNT</span>
+            <input type="number" id="amount-given" step="0.01" min="0" placeholder="0.00" oninput="updateOrderSummary()" style="text-align:right;">
+          </div>
+        </div>
+        <div id="cash-change-field">
+          <div class="order-field-btn">
+            <span style="color:var(--text-muted);font-size:13px;margin-right:10px;white-space:nowrap;">CHANGE</span>
+            <input type="number" id="change-given" step="0.01" min="0" placeholder="0.00" readonly style="text-align:right;color:var(--accent-cyan);">
+          </div>
+        </div>
+      </div>
 
-  async function loadDashboard() {
-    const [customers, orders, services] = await Promise.all([
-      api('/customers'), api('/orders'), api('/services')
-    ]);
-    document.getElementById('stat-customers').textContent = customers.length ?? '—';
-    document.getElementById('stat-orders').textContent = orders.length ?? '—';
-    document.getElementById('stat-pending').textContent = orders.filter(o => !o.isDone).length;
-    document.getElementById('stat-services').textContent = services.length ?? '—';
+      <div id="paylater-notice" style="display:none;">
+        <div class="paylater-notice">
+          <i class="fa-solid fa-clock" style="color:#ffd166;font-size:18px;flex-shrink:0;"></i>
+          <div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.08em;color:#ffd166;margin-bottom:2px;">PAY LATER — PAYMENT PENDING</div>
+            <div style="font-size:12px;color:var(--text-muted);line-height:1.5;">Order will be created and marked as unpaid. Collect payment upon pickup or delivery.</div>
+          </div>
+        </div>
+      </div>
 
-    const tbody = document.getElementById('dashboard-orders');
-    const recent = orders.slice(0, 6);
-    tbody.innerHTML = recent.length ? recent.map(o => `
-      <tr>
-        <td><span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--muted)">#${o.orderID}</span></td>
-        <td>${o.cusName}</td>
-        <td>${parseFloat(o.loadWeightKG).toFixed(1)}</td>
-        <td>${o.isDone ? '<span class="badge badge-green">Done</span>' : '<span class="badge badge-amber">Pending</span>'}</td>
-      </tr>`).join('') : '<tr><td colspan="4" class="empty-state">No orders yet</td></tr>';
-  }
+      <div id="ewallet-fields" style="display:none;margin-bottom:10px;">
+        <div class="order-grid-2">
+          <div class="order-field-btn"><input type="text" id="provider-name" placeholder="PROVIDER (GCASH, MAYA…)" style="width:100%;"></div>
+          <div class="order-field-btn"><input type="text" id="transaction-id" placeholder="TRANSACTION ID" style="width:100%;"></div>
+        </div>
+      </div>
 
-  async function loadCustomers() {
-    const data = await api('/customers');
-    const tbody = document.getElementById('customers-table');
-    tbody.innerHTML = data.length ? data.map(c => `
-      <tr>
-        <td><span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--muted)">${c.cusID}</span></td>
-        <td style="font-weight:500">${c.cusName}</td>
-        <td>${c.cusPhone || '—'}</td>
-        <td>${c.cusType ? '<span class="badge badge-blue">Student</span>' : '<span class="badge badge-gray">Regular</span>'}</td>
-        <td><span style="font-family:'DM Mono',monospace">${c.loyaltyPoints}</span> pts</td>
-      </tr>`).join('') : '<tr><td colspan="5" class="empty-state">No customers yet</td></tr>';
-  }
+      <button class="btn" style="width:100%;padding:16px;font-size:16px;background:var(--accent-blue);border-radius:12px;margin-top:6px;" onclick="createOrder()">
+        <i class="fa-solid fa-check"></i> CREATE ORDER & PROCESS PAYMENT
+      </button>
 
-  async function loadServices() {
-    const data = await api('/services');
-    const tbody = document.getElementById('services-table');
-    tbody.innerHTML = data.length ? data.map(s => `
-      <tr>
-        <td><span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--muted)">${s.serviceID}</span></td>
-        <td style="font-weight:500">${s.serviceName}</td>
-        <td>₱${parseFloat(s.servicePrice).toFixed(2)}</td>
-        <td>₱${parseFloat(s.servicePriceSTUD).toFixed(2)}</td>
-      </tr>`).join('') : '<tr><td colspan="4" class="empty-state">No services yet</td></tr>';
-  }
+    </div>
+  </div>
 
-  async function loadOrders() {
-    const data = await api('/orders');
-    const tbody = document.getElementById('orders-table');
-    tbody.innerHTML = data.length ? data.map(o => `
-      <tr>
-        <td><span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--muted)">#${o.orderID}</span></td>
-        <td style="font-weight:500">${o.cusName}</td>
-        <td>${parseFloat(o.loadWeightKG).toFixed(1)}</td>
-        <td>${o.isDone ? '<span class="badge badge-green">Done</span>' : '<span class="badge badge-amber">Pending</span>'}</td>
-        <td>${!o.isDone ? `<button class="btn btn-outline btn-sm" onclick="markDone(${o.orderID}, this)">Mark Done</button>` : '—'}</td>
-      </tr>`).join('') : '<tr><td colspan="5" class="empty-state">No orders yet</td></tr>';
-  }
+  <div class="toast" id="toast"></div>
 
-  async function loadOrderModal() {
-    const [customers, services] = await Promise.all([api('/customers'), api('/services')]);
-    const sel = document.getElementById('order-customer');
-    sel.innerHTML = customers.map(c => `<option value="${c.cusID}">${c.cusName} (${c.cusType ? 'Student' : 'Regular'})</option>`).join('');
-    const svcList = document.getElementById('order-services-list');
-    svcList.innerHTML = services.map(s => `
-      <label class="service-check">
-        <input type="checkbox" value="${s.serviceID}" />
-        ${s.serviceName}
-      </label>`).join('');
-  }
+  <script>
+    const MAX_KG_PER_LOAD = 7, API = '/api', PER_PAGE = 10;
+    const toastEl = document.getElementById('toast');
+    let state = { customers:[], services:[], orders:[], invoices:[] };
+    let pages = { cus:1, svc:1, ord:1, inv:1, loy:1 };
+    let batches = [], batchCounter = 0;
 
-  // ── Actions ──
+    const ALL_PAGES = ['home','history','customers','services','loyalty','sales','orders','new-order'];
+    const PAGE_LOAD = { customers:renderCustomers, services:renderServices, loyalty:renderLoyalty, sales:renderSales, orders:renderOrders, 'new-order':initNewOrder };
 
-  async function addCustomer() {
-    const name = document.getElementById('cus-name').value.trim();
-    const phone = document.getElementById('cus-phone').value.trim();
-    const type = document.getElementById('cus-type').value === 'true';
-    if (!name) return toast('Please enter a name', 'error');
-    await api('/customers', 'POST', { cusName: name, cusPhone: phone, cusType: type, loyaltyPoints: 0 });
-    toast('Customer added!');
-    closeModal('modal-add-customer');
-    document.getElementById('cus-name').value = '';
-    document.getElementById('cus-phone').value = '';
-    loadCustomers();
-  }
-
-  async function addService() {
-    const name = document.getElementById('svc-name').value.trim();
-    const price = parseFloat(document.getElementById('svc-price').value);
-    const priceStud = parseFloat(document.getElementById('svc-price-stud').value);
-    if (!name || isNaN(price)) return toast('Please fill in all fields', 'error');
-    await api('/services', 'POST', { serviceName: name, servicePrice: price, servicePriceSTUD: priceStud });
-    toast('Service added!');
-    closeModal('modal-add-service');
-    document.getElementById('svc-name').value = '';
-    document.getElementById('svc-price').value = '';
-    document.getElementById('svc-price-stud').value = '';
-    loadServices();
-  }
-
-  async function createOrder() {
-    const cusID = parseInt(document.getElementById('order-customer').value);
-    const weight = parseFloat(document.getElementById('order-weight').value);
-    const checked = [...document.querySelectorAll('#order-services-list input:checked')].map(i => parseInt(i.value));
-    if (!weight) return toast('Please enter load weight', 'error');
-    const res = await api('/orders', 'POST', { cusID, loadWeightKG: weight, serviceIDs: checked });
-    toast(`Order #${res.orderID} created!`);
-    closeModal('modal-add-order');
-    document.getElementById('order-weight').value = '';
-    loadOrders();
-  }
-
-  async function markDone(orderID, btn) {
-    btn.disabled = true;
-    btn.textContent = '...';
-    await api(`/orders/${orderID}/done`, 'PATCH');
-    toast(`Order #${orderID} marked as done`);
-    loadOrders();
-  }
-
-  async function createInvoice() {
-    const orderID = parseInt(document.getElementById('invoice-order-id').value);
-    const amount = parseFloat(document.getElementById('invoice-amount').value);
-    if (!orderID || isNaN(amount)) return toast('Please fill in all fields', 'error');
-    const res = await api('/invoices', 'POST', { orderID, amountToPay: amount });
-    document.getElementById('last-invoice-id').textContent = res.invoiceID;
-    toast(`Invoice #${res.invoiceID} created!`);
-    document.getElementById('invoice-order-id').value = '';
-    document.getElementById('invoice-amount').value = '';
-  }
-
-  async function recordPayment() {
-    const invoiceID = parseInt(document.getElementById('pay-invoice-id').value);
-    const method = document.getElementById('pay-method').value;
-    if (!invoiceID) return toast('Please enter an invoice ID', 'error');
-    if (method === 'cash') {
-      const amountPaid = parseFloat(document.getElementById('pay-cash-amount').value);
-      const changeGiven = parseFloat(document.getElementById('pay-cash-change').value) || 0;
-      await api('/payments/cash', 'POST', { invoiceID, amountPaid, changeGiven });
-    } else {
-      const providerName = document.getElementById('pay-provider').value;
-      const transactionID = parseInt(document.getElementById('pay-txn-id').value);
-      const amountPaid = parseFloat(document.getElementById('pay-ewallet-amount').value);
-      await api('/payments/ewallet', 'POST', { invoiceID, providerName, transactionID, amountPaid });
+    function goTo(p) {
+      ALL_PAGES.forEach(id => document.getElementById('page-'+id)?.classList.remove('active'));
+      document.getElementById('page-'+p)?.classList.add('active');
+      window.scrollTo(0,0);
+      PAGE_LOAD[p]?.();
     }
-    toast('Payment recorded!');
-    closeModal('modal-add-payment');
-  }
 
-  // ── Init ──
-  loadDashboard();
-</script>
+    function updateDate() {
+      const now = new Date();
+      const M=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+      const D=['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+      document.getElementById('date-month').textContent = M[now.getMonth()];
+      document.getElementById('date-day').textContent   = now.getDate();
+      document.getElementById('date-weekday').textContent = D[now.getDay()];
+    }
+    updateDate();
+
+    const apiCall = (path, method='GET', body=null) =>
+      fetch(API+path, { method, headers:{'Content-Type':'application/json'}, body:body?JSON.stringify(body):null })
+        .then(r => { if(!r.ok) throw new Error('API Error: '+r.status); return r.json(); });
+
+    function showToast(msg) {
+      toastEl.textContent = msg; toastEl.classList.add('show');
+      setTimeout(() => toastEl.classList.remove('show'), 3000);
+    }
+
+    async function loadData() {
+      try {
+        const [customers,services,orders] = await Promise.all([apiCall('/customers'),apiCall('/services'),apiCall('/orders')]);
+        state.customers = customers||[]; state.services = services||[]; state.orders = orders||[];
+        updateInfoboard();
+      } catch(e) { console.error('Load failed:',e); }
+    }
+
+    function updateInfoboard() {
+      const pending  = state.orders.filter(o => !o.isDone);
+      document.getElementById('info-pickup-onsite').textContent  = pending.filter(o => !o.deliveryAddress).length;
+      document.getElementById('info-delivery').textContent       = pending.filter(o =>  o.deliveryAddress).length;
+      document.getElementById('info-pickup-laundry').textContent = state.orders.filter(o => o.isDone).length;
+    }
+
+    const statusBadge = done  => done ? '<span class="badge badge-done">Done</span>' : '<span class="badge badge-pending">Pending</span>';
+    const typeBadge   = type  => (type===true||type==='student'||type===1) ? '<span class="badge badge-student">Student</span>' : '<span class="badge badge-regular">Regular</span>';
+    const fmtDate     = val   => { if(!val) return ''; const d=new Date(val); return isNaN(d)?val:d.toLocaleString([],{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}); };
+
+    function filterByDate(items, filter, field='invoiceDate') {
+      if(!filter||filter==='all') return items;
+      const now=new Date(), today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+      const ranges = { today:[today], yesterday:[new Date(today.setDate(today.getDate()-1)),today], week:[new Date(new Date().setDate(new Date().getDate()-6))], month:[new Date(new Date().setMonth(new Date().getMonth()-1))], year:[new Date(new Date().setFullYear(new Date().getFullYear()-1))] };
+      const [start,end] = ranges[filter]||[];
+      return items.filter(i => { const d=new Date(i[field]); return !isNaN(d)&&d>=start&&(!end||d<end); });
+    }
+
+    function paginate(items, page) {
+      const total=Math.max(1,Math.ceil(items.length/PER_PAGE)), p=Math.max(1,Math.min(page,total));
+      return { items:items.slice((p-1)*PER_PAGE,p*PER_PAGE), page:p, total };
+    }
+
+    const getLoadCount = w => { const n=parseFloat(w)||0; return n>0?Math.ceil(n/MAX_KG_PER_LOAD):0; };
+
+    function setPagination(prefix, page, total) {
+      document.getElementById(prefix+'-info').textContent = `Page ${page} of ${total}`;
+      document.getElementById(prefix+'-prev').disabled = page<=1;
+      document.getElementById(prefix+'-next').disabled = page>=total;
+    }
+
+    /* ── CUSTOMERS ── */
+    function renderCustomers() {
+      const {items,page,total} = paginate(state.customers, pages.cus); pages.cus=page;
+      document.getElementById('customers-tbody').innerHTML = items.map(c => `
+        <tr><td>${c.cusID}</td><td>${c.cusName}</td><td>${c.cusPhone||''}</td><td>${c.address||''}</td>
+        <td>${typeBadge(c.cusType)}</td><td>${c.loyaltyPoints||0}</td><td>${c.freeServiceCredit||0}</td></tr>
+      `).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px;">No customers</td></tr>';
+      setPagination('cus',page,total);
+    }
+    function cusPage(d){ pages.cus+=d; renderCustomers(); }
+
+    /* ── SERVICES ── */
+    function renderServices() {
+      const {items,page,total} = paginate(state.services, pages.svc); pages.svc=page;
+      document.getElementById('services-tbody').innerHTML = items.map(s => `
+        <tr><td>${s.serviceID}</td><td>${s.serviceName}</td>
+        <td>₱${parseFloat(s.servicePrice).toFixed(2)}</td><td>₱${parseFloat(s.servicePriceSTUD).toFixed(2)}</td>
+        <td><button class="btn" style="background:#c0392b;" onclick="deleteService(${s.serviceID})">Delete</button></td></tr>
+      `).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">No services</td></tr>';
+      setPagination('svc',page,total);
+    }
+    function svcPage(d){ pages.svc+=d; renderServices(); }
+
+    async function createService() {
+      const name=document.getElementById('svc-name').value.trim();
+      const price=parseFloat(document.getElementById('svc-price').value);
+      const priceS=parseFloat(document.getElementById('svc-price-stud').value);
+      if(!name||isNaN(price)||isNaN(priceS)){ showToast('Please fill all fields'); return; }
+      try {
+        await apiCall('/services','POST',{serviceName:name,servicePrice:price,servicePriceSTUD:priceS});
+        showToast('Service added'); await loadData(); pages.svc=1; renderServices();
+        ['svc-name','svc-price','svc-price-stud'].forEach(id=>document.getElementById(id).value='');
+      } catch { showToast('Failed to add service'); }
+    }
+
+    async function deleteService(id) {
+      if(!confirm('Delete this service?')) return;
+      try { await apiCall(`/services/${id}`,'DELETE'); showToast('Service deleted'); await loadData(); renderServices(); }
+      catch { showToast('Failed to delete service'); }
+    }
+
+    /* ── LOYALTY ── */
+    // Threshold: every 10th point resets to 0 and earns 1 free wash
+    const LOYALTY_THRESHOLD = 10;
+
+    function renderLoyalty() {
+      const {items,page,total} = paginate(state.customers, pages.loy); pages.loy=page;
+
+      document.getElementById('loyalty-tbody').innerHTML = items.map(c => {
+        const pts     = c.loyaltyPoints || 0;
+        const credits = c.freeServiceCredit || 0;
+        const canClaim = credits >= 1;
+
+        const statusHtml = canClaim
+          ? `<span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.06em;color:#7cd2a8;">CLAIM FREE WASH</span>`
+          : `<span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.06em;color:#ffd166;">EARN MORE POINTS</span>`;
+
+        return `<tr>
+          <td style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;">${c.cusID}</td>
+          <td style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;letter-spacing:.04em;">${c.cusName}</td>
+          <td style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:22px;color:var(--accent-cyan);text-align:center;">${pts}</td>
+          <td style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:22px;color:#fff;text-align:center;">${credits}</td>
+          <td>${statusHtml}</td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">No customers found.</td></tr>';
+
+      setPagination('loy', page, total);
+    }
+    function loyPage(d){ pages.loy+=d; renderLoyalty(); }
+
+    /* ── SALES ── */
+    async function renderSales() {
+      try {
+        state.invoices = await apiCall('/invoices')||[];
+        const filter   = document.getElementById('revenue-filter').value||'all';
+        const filtered = filterByDate(state.invoices,filter);
+        const revenue  = filtered.reduce((s,i)=>s+parseFloat(i.amountToPay||0),0);
+        const paid     = filtered.filter(i=>i.amountPaid!=null).length;
+        document.getElementById('sales-stats').innerHTML = [
+          ['Total Orders',state.orders.length],['Total Customers',state.customers.length],
+          ['Services',state.services.length],['Revenue',`₱${revenue.toFixed(2)}`,true],
+          ['Paid Invoices',paid],['Pending Invoices',filtered.length-paid]
+        ].map(([l,v,c])=>`<div class="card"><div class="card-label">${l}</div><div class="card-value"${c?' style="color:var(--accent-cyan);"':''}>${v}</div></div>`).join('');
+
+        const {items,page,total} = paginate(filtered,pages.inv); pages.inv=page;
+        document.getElementById('sales-tbody').innerHTML = items.map(i => `
+          <tr><td>#${i.invoiceID}</td><td>${fmtDate(i.invoiceDate)}</td><td>${i.cusName}</td><td>${i.cusPhone}</td>
+          <td>₱${parseFloat(i.amountToPay).toFixed(2)}</td><td>${i.loadWeightKG} kg</td>
+          <td>${i.providerName ? `${i.providerName} (${i.transactionID}) — ₱${parseFloat(i.amountPaid).toFixed(2)}` : i.amountPaid ? `Cash: ₱${parseFloat(i.amountPaid).toFixed(2)} (Change: ₱${parseFloat(i.changeGiven||0).toFixed(2)})` : '<span style="color:#ffd166;">Pending</span>'}</td></tr>
+        `).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px;">No invoices</td></tr>';
+        setPagination('inv',page,total);
+      } catch(e) { showToast('Failed to load sales: '+e.message); }
+    }
+    function invPage(d){ pages.inv+=d; renderSales(); }
+
+    /* ── ORDERS ── */
+    function renderOrders() {
+      const pending=state.orders.filter(o=>!o.isDone).length, done=state.orders.filter(o=>o.isDone).length;
+      const unpaid=state.orders.filter(o=>parseInt(o.isPaid)!==1).length;
+      document.getElementById('order-stats').innerHTML = [
+        ['Total Orders',state.orders.length],['Pending',pending],['Completed',done],['Unpaid',unpaid,true]
+      ].map(([l,v,w])=>`<div class="card"><div class="card-label">${l}</div><div class="card-value"${w?' style="color:#ffd166;"':''}>${v}</div></div>`).join('');
+
+      const {items,page,total} = paginate(state.orders,pages.ord); pages.ord=page;
+      document.getElementById('orders-tbody').innerHTML = items.map(o => {
+        const paid=parseInt(o.isPaid)===1;
+        return `<tr>
+          <td>#${o.orderID}</td><td>${o.cusName||'Unknown'}</td>
+          <td style="max-width:220px;">${buildBatchCell(o)}</td>
+          <td>${o.loadWeightKG} kg</td>
+          <td style="font-family:'Barlow Condensed',sans-serif;font-weight:800;color:var(--accent-cyan);font-size:16px;">${o.invoiceAmount?'₱'+parseFloat(o.invoiceAmount).toFixed(2):'—'}</td>
+          <td>${o.deliveryAddress||'—'}</td>
+          <td><div style="display:flex;flex-direction:column;gap:5px;">${statusBadge(o.isDone)}${paid?'<span class="badge badge-paid">Paid</span>':'<span class="badge badge-paylater">Unpaid</span>'}</div></td>
+          <td><div style="display:flex;flex-direction:column;gap:5px;">
+            <button class="btn" style="background:${o.isDone?'#27ae60':'#e67e22'};" onclick="updateOrderStatus(${o.orderID},${!o.isDone})">${o.isDone?'Mark Pending':'Mark Done'}</button>
+            ${paid?`<button class="btn" style="background:#8e44ad;white-space:nowrap;" onclick="updateOrderPayment(${o.orderID},false)"><i class="fa-solid fa-rotate-left"></i> Mark Unpaid</button>`
+                  :`<button class="btn" style="background:#27ae60;white-space:nowrap;" onclick="updateOrderPayment(${o.orderID},true)"><i class="fa-solid fa-money-bill"></i> Mark Paid</button>`}
+          </div></td>
+          <td><button class="btn" style="background:#c0392b;" onclick="deleteOrder(${o.orderID})"><i class="fa-solid fa-trash"></i></button></td>
+        </tr>`;
+      }).join('')||'<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:20px;">No orders</td></tr>';
+      setPagination('ord',page,total);
+    }
+    function ordPage(d){ pages.ord+=d; renderOrders(); }
+
+    function buildBatchCell(o) {
+      const m = (o.notes||'').match(/^BATCHES:(\[[\s\S]*?\])(?:\s*\|[\s\S]*)?$/);
+      if(m) {
+        try {
+          const bd=JSON.parse(m[1]); if(!bd.length) return '—';
+          return '<div class="batch-breakdown">'+bd.map((b,i)=>{
+            const svcs=[...(b.services||[])]; if(b.hasOther) svcs.push(`${b.otherName||'Other'} (₱${parseFloat(b.otherPrice||0).toFixed(2)})`);
+            const wt=b.weight?`${parseFloat(b.weight).toFixed(1)} kg`:'—';
+            const ld=b.loadCount>1?` ×${b.loadCount} loads`:'', pr=b.batchTotal!=null?` · ₱${parseFloat(b.batchTotal).toFixed(2)}`:'';
+            return `<div class="batch-breakdown-row"><span class="batch-breakdown-num">B${i+1}</span><span class="batch-breakdown-detail"><strong>${wt}${ld}${pr}</strong> — ${svcs.join(', ')||'No service'}${b.notes?` <em>(${b.notes})</em>`:''}</span></div>`;
+          }).join('')+'</div>';
+        } catch(e){}
+      }
+      if(o.notes) return `<span style="font-size:12px;color:var(--text-muted);">${o.notes.length>80?o.notes.substring(0,80)+'…':o.notes}</span>`;
+      return `<span style="font-size:12px;">${o.serviceNames||'—'}</span>`;
+    }
+
+    async function deleteOrder(id) {
+      if(!confirm('Delete this order?')) return;
+      try { await apiCall(`/orders/${id}`,'DELETE'); showToast('Order deleted'); await loadData(); renderOrders(); }
+      catch { showToast('Failed to delete order'); }
+    }
+
+    async function updateOrderPayment(id,isPaid) {
+      try { await apiCall(`/orders/${id}/payment`,'PATCH',{isPaid}); showToast(isPaid?'Marked as paid ✓':'Marked as unpaid'); await loadData(); renderOrders(); }
+      catch(e) { showToast('Failed to update payment: '+e.message); }
+    }
+
+    async function updateOrderStatus(id,isDone) {
+      try { await apiCall(`/orders/${id}/status`,'PATCH',{isDone}); showToast('Order updated'); await loadData(); renderOrders(); }
+      catch { showToast('Failed to update order'); }
+    }
+
+    /* ── NEW ORDER helpers ── */
+    const isStudentMode = () => (window._customerMode||'existing')==='existing'
+      ? document.getElementById('customer-type-existing')?.value==='student'
+      : document.getElementById('customer-type-new')?.value==='student';
+
+    function addBatch() {
+      batchCounter++;
+      batches.push({id:batchCounter,weight:'',serviceIDs:[],hasOther:false,otherName:'',otherPrice:0,notes:'',collapsed:false});
+      renderBatches();
+    }
+
+    function removeBatch(id) {
+      if(batches.length<=1){ showToast('At least one batch is required'); return; }
+      batches=batches.filter(b=>b.id!==id); renderBatches(); updateOrderSummary();
+    }
+
+    function toggleBatch(id) {
+      const body=document.getElementById(`batch-body-${id}`), icon=document.getElementById(`batch-toggle-icon-${id}`);
+      const open=body.style.display!=='none';
+      body.style.display=open?'none':'block'; icon.classList.toggle('open',!open);
+    }
+
+    function renderBatches() {
+      const container=document.getElementById('batches-container'); if(!container) return;
+      const isStudent=isStudentMode();
+      container.innerHTML=batches.map((b,idx)=>{
+        const lc=getLoadCount(b.weight);
+        const checkboxes=state.services.map(s=>{
+          const price=parseFloat(isStudent?s.servicePriceSTUD:s.servicePrice), lbl=lc>1?`₱${price.toFixed(2)}×${lc}=₱${(price*lc).toFixed(2)}`:`₱${price.toFixed(2)}`;
+          return `<label class="svc-check-label">
+            <input type="checkbox" class="svc-cb" value="${s.serviceID}" data-price="${s.servicePrice}" data-price-stud="${s.servicePriceSTUD}" data-name="${s.serviceName}" ${b.serviceIDs.includes(s.serviceID)?'checked':''} onchange="onBatchServiceChange(${b.id},this)">
+            <span class="svc-check-box"></span>
+            <span class="svc-check-text">${s.serviceName.toUpperCase()} <span style="color:var(--accent-cyan);font-size:11px;">${lbl}</span></span></label>`;
+        }).join('');
+        const bp=computeBatchTotal(b);
+        return `<div class="batch-card" id="batch-card-${b.id}">
+          <div class="batch-header" onclick="toggleBatch(${b.id})">
+            <div class="batch-header-left">
+              <span class="batch-number">BATCH ${idx+1}</span>
+              <span class="batch-summary">${b.weight?b.weight+' kg':'no weight'}</span>
+              ${lc>0?`<span class="batch-load-count">${lc} LOAD${lc>1?'S':''}</span>`:''}
+            </div>
+            <div class="batch-header-right">
+              ${bp>0?`<span class="batch-price-badge">₱${bp.toFixed(2)}</span>`:''}
+              <button class="batch-remove-btn" onclick="event.stopPropagation();removeBatch(${b.id})"><i class="fa-solid fa-xmark"></i></button>
+              <i class="fa-solid fa-chevron-down batch-toggle-icon open" id="batch-toggle-icon-${b.id}"></i>
+            </div>
+          </div>
+          <div class="batch-body" id="batch-body-${b.id}">
+            <div class="batch-weight-row">
+              <input type="number" class="batch-weight-input" placeholder="0.0" step="0.1" min="0" value="${b.weight||''}" oninput="onBatchWeightChange(${b.id},this.value)">
+              <span class="batch-weight-label">KG FOR THIS BATCH</span>
+            </div>
+            <div class="batch-services">
+              <div class="batch-services-title">SELECT SERVICES</div>
+              ${checkboxes}
+              <label class="svc-check-label">
+                <input type="checkbox" class="svc-cb" value="other" ${b.hasOther?'checked':''} onchange="onBatchOtherChange(${b.id},this)">
+                <span class="svc-check-box"></span>
+                <span class="svc-check-text">OTHER SERVICE <span style="color:#ffd166;font-size:11px;">custom price</span></span></label>
+              <div class="batch-other-price-field" id="batch-other-field-${b.id}" style="display:${b.hasOther?'block':'none'};">
+                <div class="other-row"><span class="other-label">SERVICE NAME</span><input type="text" class="batch-other-input" placeholder="e.g. Comforter Wash" value="${b.otherName||''}" oninput="onBatchOtherName(${b.id},this.value)"></div>
+                <div class="other-row"><span class="other-label">PRICE (₱)</span><input type="number" class="batch-other-price-input" placeholder="0.00" step="0.01" min="0" value="${b.otherPrice||''}" oninput="onBatchOtherPrice(${b.id},this.value)"></div>
+              </div>
+            </div>
+            <textarea class="batch-notes-input" placeholder="Batch notes…" rows="2" oninput="onBatchNotes(${b.id},this.value)">${b.notes||''}</textarea>
+          </div>
+        </div>`;
+      }).join('');
+      updateOrderSummary();
+    }
+
+    function onBatchWeightChange(id,val){ const b=batches.find(x=>x.id===id); if(b){b.weight=val;renderBatches();} }
+    function onBatchServiceChange(id,cb){ const b=batches.find(x=>x.id===id); if(!b) return; const sid=parseInt(cb.value); cb.checked?b.serviceIDs.includes(sid)||b.serviceIDs.push(sid):b.serviceIDs=b.serviceIDs.filter(s=>s!==sid); updateBatchHeader(id); updateOrderSummary(); }
+    function onBatchOtherChange(id,cb){ const b=batches.find(x=>x.id===id); if(!b) return; b.hasOther=cb.checked; document.getElementById(`batch-other-field-${id}`).style.display=cb.checked?'block':'none'; if(!cb.checked){b.otherName='';b.otherPrice=0;} updateBatchHeader(id); updateOrderSummary(); }
+    function onBatchOtherName(id,val){ const b=batches.find(x=>x.id===id); if(b) b.otherName=val; }
+    function onBatchOtherPrice(id,val){ const b=batches.find(x=>x.id===id); if(b){b.otherPrice=parseFloat(val)||0; updateBatchHeader(id); updateOrderSummary();} }
+    function onBatchNotes(id,val){ const b=batches.find(x=>x.id===id); if(b) b.notes=val; }
+
+    function computeBatchTotal(b) {
+      const isStudent=isStudentMode(), lc=Math.max(1,getLoadCount(b.weight));
+      return b.serviceIDs.reduce((t,sid)=>{ const s=state.services.find(x=>x.serviceID===sid); return t+(s?parseFloat(isStudent?s.servicePriceSTUD:s.servicePrice)*lc:0); },0) + (b.hasOther?parseFloat(b.otherPrice)||0:0);
+    }
+
+    function updateBatchHeader(id) {
+      const b=batches.find(x=>x.id===id); if(!b) return;
+      const bp=computeBatchTotal(b);
+      const pe=document.querySelector(`#batch-card-${id} .batch-price-badge`);
+      const se=document.querySelector(`#batch-card-${id} .batch-summary`);
+      if(pe) pe.textContent=bp>0?`₱${bp.toFixed(2)}`:'';
+      if(se) se.textContent=b.weight?`${b.weight} kg`:'no weight';
+    }
+
+    const refreshAllBatchPrices = () => renderBatches();
+
+    function updateOrderSummary() {
+      const tw=batches.reduce((s,b)=>s+(parseFloat(b.weight)||0),0);
+      const tp=batches.reduce((s,b)=>s+computeBatchTotal(b),0);
+      document.getElementById('total-weight-display').textContent=`${tw.toFixed(1)} kg total`;
+      document.getElementById('total-price-display').textContent=`₱${tp.toFixed(2)}`;
+      const pm=document.getElementById('payment-method')?.value;
+      const given=parseFloat(document.getElementById('amount-given')?.value)||0;
+      const cel=document.getElementById('change-given');
+      if(cel) cel.value=pm==='paylater'?'':Math.max(0,given-tp).toFixed(2);
+    }
+
+    function initNewOrder() {
+      window._isDelivery=false; window._customerMode='existing';
+      const now=new Date(), pad=n=>String(n).padStart(2,'0');
+      document.getElementById('order-date').value=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+      document.getElementById('order-time').value=`${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      ['existing-customer-id','amount-given'].forEach(id=>document.getElementById(id).value='');
+      ['existing-customer-details','delivery-address-field','ewallet-fields','paylater-notice'].forEach(id=>document.getElementById(id).style.display='none');
+      ['cash-amount-field','cash-change-field'].forEach(id=>document.getElementById(id).style.display='block');
+      document.getElementById('customer-search-status').textContent='';
+      document.getElementById('deliver-status-span').textContent='NO';
+      document.getElementById('special-instructions').value='';
+      document.getElementById('payment-method').value='cash';
+      selectCustomerMode('existing');
+      batches=[]; batchCounter=0; addBatch();
+    }
+
+    function setDelivery(val) {
+      window._isDelivery=val;
+      document.getElementById('delivery-address-field').style.display=val?'block':'none';
+      document.getElementById('deliver-status-span').textContent=val?'YES':'NO';
+    }
+
+    function togglePaymentFields() {
+      const v=document.getElementById('payment-method').value;
+      document.getElementById('ewallet-fields').style.display=v==='ewallet'?'block':'none';
+      document.getElementById('cash-amount-field').style.display=v==='cash'?'block':'none';
+      document.getElementById('cash-change-field').style.display=v==='cash'?'block':'none';
+      document.getElementById('paylater-notice').style.display=v==='paylater'?'block':'none';
+      updateOrderSummary();
+    }
+
+    function selectCustomerMode(mode) {
+      window._customerMode=mode;
+      document.getElementById('existing-customer-section').style.display=mode==='existing'?'block':'none';
+      document.getElementById('new-customer-section').style.display=mode==='new'?'block':'none';
+      document.getElementById('cmode-existing-btn').classList.toggle('active',mode==='existing');
+      document.getElementById('cmode-new-btn').classList.toggle('active',mode==='new');
+      if(mode==='existing'){ document.getElementById('existing-customer-details').style.display='none'; document.getElementById('existing-customer-id').value=''; }
+      renderBatches();
+    }
+
+    function lookupCustomerByName() {
+      const name=document.getElementById('customer-name-existing').value.trim();
+      const statusEl=document.getElementById('customer-search-status');
+      if(!name){ statusEl.textContent='Please enter a customer name.'; return; }
+      const found=state.customers.find(c=>c.cusName?.toLowerCase()===name.toLowerCase());
+      if(!found){ statusEl.textContent='No customer found. Use New Customer to create one.'; document.getElementById('existing-customer-id').value=''; document.getElementById('existing-customer-details').style.display='none'; return; }
+      document.getElementById('customer-phone-existing').value=found.cusPhone||'';
+      document.getElementById('customer-address-existing').value=found.address||'';
+      document.getElementById('customer-type-existing').value=(found.cusType===true||found.cusType==='student')?'student':'regular';
+      document.getElementById('existing-customer-details').style.display='block';
+      document.getElementById('existing-customer-id').value=found.cusID;
+      statusEl.textContent=`Found: ${found.cusName}`;
+      renderBatches();
+    }
+
+    async function createOrder() {
+      const mode=window._customerMode||'existing';
+      const existingID=document.getElementById('existing-customer-id').value;
+      let cusName,cusPhone,cusAddress,cusType;
+
+      if(mode==='existing'){
+        cusName=document.getElementById('customer-name-existing').value.trim();
+        cusPhone=document.getElementById('customer-phone-existing').value.trim();
+        cusAddress=document.getElementById('customer-address-existing').value.trim();
+        cusType=document.getElementById('customer-type-existing').value==='student';
+      } else {
+        const fn=document.getElementById('customer-fname').value.trim(), ln=document.getElementById('customer-lname').value.trim(), mi=document.getElementById('customer-mi').value.trim();
+        cusName=[fn,mi?mi+'.':'',ln].filter(Boolean).join(' ');
+        cusPhone=document.getElementById('customer-phone-new').value.trim();
+        cusAddress=document.getElementById('customer-address-new').value.trim();
+        cusType=document.getElementById('customer-type-new').value==='student';
+      }
+
+      const notes=document.getElementById('special-instructions').value.trim()||'';
+      const isDelivery=window._isDelivery, payMethod=document.getElementById('payment-method').value;
+      const delivAddr=document.getElementById('delivery-address').value?.trim();
+      const provider=document.getElementById('provider-name').value?.trim();
+      const txnID=document.getElementById('transaction-id').value?.trim();
+      const amtGiven=parseFloat(document.getElementById('amount-given').value);
+
+      if(mode==='existing'&&!existingID){ showToast('Please find the existing customer first'); return; }
+      if(!cusName){ showToast('Please enter customer name'); return; }
+      if(mode==='new'&&(!cusPhone||!cusAddress)){ showToast('Please enter phone and address'); return; }
+      if(!batches.length){ showToast('Add at least one batch'); return; }
+      for(let i=0;i<batches.length;i++){
+        const b=batches[i], w=parseFloat(b.weight);
+        if(!b.weight||isNaN(w)||w<=0){ showToast(`Batch ${i+1}: enter a valid weight`); return; }
+        if(!b.serviceIDs.length&&!b.hasOther){ showToast(`Batch ${i+1}: select at least one service`); return; }
+        if(b.hasOther&&(!b.otherName||parseFloat(b.otherPrice)<=0)){ showToast(`Batch ${i+1}: enter name and price for Other Service`); return; }
+      }
+      if(isDelivery&&!delivAddr){ showToast('Please enter delivery address'); return; }
+      if(payMethod==='ewallet'&&(!provider||!txnID)){ showToast('Please enter provider and transaction ID'); return; }
+
+      let totalWeight=0, totalAmount=0;
+      const allServiceIDs=new Set(), batchNotes=[];
+      for(const b of batches){
+        const w=parseFloat(b.weight)||0, lc=Math.max(1,getLoadCount(w));
+        totalWeight+=w; let bt=0; const bsvcs=[];
+        for(const sid of b.serviceIDs){
+          allServiceIDs.add(sid);
+          const svc=state.services.find(s=>s.serviceID===sid);
+          if(svc){ const up=parseFloat(cusType?svc.servicePriceSTUD:svc.servicePrice)||0; bt+=up*lc; bsvcs.push(svc.serviceName); }
+        }
+        if(b.hasOther) bt+=parseFloat(b.otherPrice)||0;
+        totalAmount+=bt;
+        batchNotes.push({weight:w,loadCount:lc,services:bsvcs,hasOther:b.hasOther,otherName:b.otherName||'',otherPrice:b.hasOther?parseFloat(b.otherPrice)||0:0,notes:b.notes||'',batchTotal:bt});
+      }
+
+      if(payMethod==='cash'&&(isNaN(amtGiven)||amtGiven<0)){ showToast('Please enter the amount given'); return; }
+
+      try {
+        let customer=existingID?state.customers.find(c=>String(c.cusID)===String(existingID)):state.customers.find(c=>c.cusPhone===cusPhone);
+        let cusID, loyaltyPts=0, freeCredit=0;
+
+        if(customer){
+          cusID=customer.cusID; loyaltyPts=customer.loyaltyPoints||0; freeCredit=customer.freeServiceCredit||0;
+          const upd={};
+          if(customer.cusName!==cusName) upd.cusName=cusName;
+          if(customer.address!==cusAddress) upd.address=cusAddress;
+          if(customer.cusType!==cusType) upd.cusType=cusType;
+          if(Object.keys(upd).length) await apiCall(`/customers/${cusID}`,'PATCH',upd);
+        } else {
+          const cr=await apiCall('/customers','POST',{cusName,cusPhone,cusType,loyaltyPoints:0,address:cusAddress,freeServiceCredit:0});
+          cusID=cr.cusID; if(!cusID) throw new Error('Failed to create customer');
+        }
+
+        let discount=0, freeName='';
+        if(freeCredit>0&&allServiceIDs.size>0){
+          let cheapest=null;
+          for(const sid of allServiceIDs){ const s=state.services.find(x=>x.serviceID===sid); if(s){ const p=parseFloat(cusType?s.servicePriceSTUD:s.servicePrice); if(!cheapest||p<cheapest.price) cheapest={price:p,name:s.serviceName}; } }
+          if(cheapest){ discount=cheapest.price; freeName=cheapest.name; freeCredit-=1; }
+        }
+        loyaltyPts+=1; let earnedFree=false;
+        if(loyaltyPts>=10){ loyaltyPts=0; freeCredit+=1; earnedFree=true; }
+
+        const amtToPay=parseFloat((totalAmount-discount).toFixed(2));
+        if(payMethod==='cash'&&amtGiven<amtToPay){ showToast(`Amount given (₱${amtGiven.toFixed(2)}) must be ≥ total (₱${amtToPay.toFixed(2)})`); return; }
+        const change=payMethod==='cash'?parseFloat((amtGiven-amtToPay).toFixed(2)):0;
+
+        const noteParts=[`BATCHES:${JSON.stringify(batchNotes)}`];
+        if(notes) noteParts.push(`Instructions: ${notes}`);
+        if(freeName) noteParts.push(`Free: ${freeName}`);
+
+        const {orderID}=await apiCall('/orders','POST',{cusID,loadWeightKG:totalWeight,serviceIDs:Array.from(allServiceIDs),notes:noteParts.join(' | ')});
+        const {invoiceID}=await apiCall('/invoices','POST',{orderID,amountToPay:amtToPay});
+
+        if(payMethod==='cash') await apiCall('/payments/cash','POST',{invoiceID,amountPaid:amtGiven,changeGiven:change});
+        else if(payMethod==='ewallet') await apiCall('/payments/ewallet','POST',{invoiceID,providerName:provider,transactionID:txnID,amountPaid:amtToPay});
+
+        if(isDelivery) await apiCall('/delivery','POST',{deliveryAddress:delivAddr,orderID});
+        else await apiCall('/walkin','POST',{custName:cusName,dateAndTime:new Date().toISOString().slice(0,19).replace('T',' '),orderID});
+
+        await apiCall(`/customers/${cusID}`,'PATCH',{loyaltyPoints:loyaltyPts,freeServiceCredit:freeCredit});
+
+        let msg=payMethod==='paylater'?'Order created! Payment pending.':'Order created and payment processed!';
+        if(freeName) msg+=` Free service applied: ${freeName}.`;
+        if(earnedFree) msg+=' 🎉 Earned 1 free service credit!';
+        showToast(msg); await loadData(); goTo('orders');
+      } catch(err){ showToast('Failed to create order: '+err.message); console.error(err); }
+    }
+
+    window.addEventListener('load', loadData);
+  </script>
 </body>
 </html>

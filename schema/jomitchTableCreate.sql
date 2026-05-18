@@ -11,6 +11,21 @@ CREATE TABLE Customer
     CONSTRAINT pk_customer PRIMARY KEY (cusID)
 );
 
+-- Trigger: whenever loyaltyPoints reaches 10+,
+DELIMITER $$
+ 
+CREATE TRIGGER trg_loyalty_check
+BEFORE UPDATE ON Customer
+FOR EACH ROW
+BEGIN
+  IF NEW.loyaltyPoints >= 10 THEN
+    SET NEW.freeServiceCredit = NEW.freeServiceCredit + FLOOR(NEW.loyaltyPoints / 10);
+    SET NEW.loyaltyPoints     = NEW.loyaltyPoints % 10;
+  END IF;
+END$$
+ 
+DELIMITER ;
+
 CREATE TABLE Order_Slip
 (
     orderID int(255) NOT NULL AUTO_INCREMENT,
@@ -69,22 +84,24 @@ CREATE TABLE EWalletOrCard
 
 CREATE TABLE Delivery
 (
+    deliveryID int(255) NOT NULL AUTO_INCREMENT,
     DserviceID int(255) NOT NULL,
     deliveryStatus boolean,
     deliveryAddress varchar(255),
-    orderID int(255), 
-    CONSTRAINT pk_delivery PRIMARY KEY (DserviceID),
+    orderID int(255),
+    CONSTRAINT pk_delivery PRIMARY KEY (deliveryID),
     CONSTRAINT fk_delivery_service FOREIGN KEY (DserviceID) REFERENCES Service(serviceID),
     CONSTRAINT fk_delivery_order FOREIGN KEY (orderID) REFERENCES Order_Slip(orderID)
 );
 
 CREATE TABLE WalkIn
 (
+    walkInID int(255) NOT NULL AUTO_INCREMENT,
     WserviceID int(255) NOT NULL,
     custName varchar(255),
     dateAndTime datetime,
     orderID int(255),
-    CONSTRAINT pk_walkin PRIMARY KEY (WserviceID),
+    CONSTRAINT pk_walkin PRIMARY KEY (walkInID),
     CONSTRAINT fk_walkin_service FOREIGN KEY (WserviceID) REFERENCES Service(serviceID),
     CONSTRAINT fk_walkin_order FOREIGN KEY (orderID) REFERENCES Order_Slip(orderID)
 );
