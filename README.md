@@ -52,6 +52,119 @@ You should see `{ "message": "Backend is alive!" }`
 
 ---
 
+## Database Migrations
+
+This project uses a simple migration system to manage database schema changes.
+Instead of manually editing the database or re-importing the full schema,
+you create small numbered SQL files that run automatically and only once.
+
+---
+
+### How it works
+
+- Migration files live in `schema/migrations/`
+- Each file is numbered and runs in order (`001_`, `002_`, etc.)
+- The script tracks which files have already run in a `migrations` table
+- Running `npm run migrate` only executes files it hasn't seen before
+
+---
+
+### Running migrations
+
+Make sure XAMPP MySQL is running and you are in the `backend/` folder, then run:
+
+    cd path/to/project/backend
+    npm run migrate
+
+You should see something like:
+
+    Skipping 001_fix_delivery.sql (already ran)
+    Running 002_add_column.sql...
+    Done: 002_add_column.sql
+    All migrations up to date!
+
+---
+
+### When to use migrations
+
+Use a migration whenever you need to change the database structure:
+
+- Adding a new column
+- Renaming or dropping a column
+- Creating or dropping a table
+- Any ALTER TABLE or CREATE TABLE change
+
+Never edit the original `jomitchTableCreate.sql` for structural changes.
+That file is only for fresh installs. All changes after the initial setup go in migrations.
+
+---
+
+### Creating a migration
+
+Step 1 — Create a new file in `schema/migrations/` with the next number:
+
+    database/migrations/004_add_pickup_schedule.sql
+
+Step 2 — Write only the SQL for your change. No USE or CREATE DATABASE statements:
+
+    ALTER TABLE Order_Slip ADD COLUMN IF NOT EXISTS pickupSchedule DATETIME;
+
+Step 3 — Run the migration:
+
+    npm run migrate
+
+Step 4 — Commit and push:
+
+    git add .
+    git commit -m "add pickup schedule column"
+    git push
+
+Step 5 — Tell your groupmates to pull and run migrations:
+
+    git pull
+    npm run migrate
+
+---
+
+### Rules
+
+- Never edit an old migration file. If you made a mistake, create a new file that fixes it.
+- Always increment the number: `004_`, `005_`, `006_`...
+- Never include USE or CREATE DATABASE in migration files — the connection already knows the database.
+- Use IF NOT EXISTS or IF EXISTS where possible to make migrations safe to re-run.
+
+---
+
+### Common migration examples
+
+Add a column:
+
+    ALTER TABLE Customer ADD COLUMN IF NOT EXISTS birthdate DATE;
+
+Rename a column:
+
+    ALTER TABLE Customer CHANGE COLUMN cusAddress address VARCHAR(255);
+
+Drop a column:
+
+    ALTER TABLE Order_Slip DROP COLUMN IF EXISTS oldColumn;
+
+Add a new table:
+
+    CREATE TABLE IF NOT EXISTS Notification (
+        notifID INT NOT NULL AUTO_INCREMENT,
+        cusID INT,
+        message VARCHAR(255),
+        createdAt DATETIME DEFAULT NOW(),
+        CONSTRAINT pk_notif PRIMARY KEY (notifID),
+        CONSTRAINT fk_notif_customer FOREIGN KEY (cusID) REFERENCES Customer(cusID)
+    );
+
+Drop a table:
+
+    DROP TABLE IF EXISTS OldTable;
+
+
 ## API Routes
 
 ### Customers
