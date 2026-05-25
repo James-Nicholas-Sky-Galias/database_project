@@ -54,7 +54,7 @@ async function migrate() {
     await addCol(t, newID, 'INT NOT NULL AUTO_INCREMENT PRIMARY KEY FIRST');
   };
 
-  await addCol('Customer',   'address',           'VARCHAR(255)');
+  await addCol('Customer',   'cusAddress',           'VARCHAR(255)');
   await addCol('Customer',   'freeServiceCredit', 'INT DEFAULT 0');
   await addCol('Order_Slip', 'loadCount',         'INT DEFAULT 1');
   await addCol('Order_Slip', 'notes',             'TEXT');
@@ -85,14 +85,14 @@ app.get ('/api/ping', (_,res) => res.json({message:'Backend is alive!'}));
 app.get   ('/api/customers',    (_,res) => send(res, q('SELECT * FROM Customer ORDER BY cusID DESC')));
 app.get   ('/api/customers/:id',  (req,res) => send1(res, q('SELECT * FROM Customer WHERE cusID=?',[req.params.id]),'Customer not found'));
 app.post  ('/api/customers',    (req,res) => {
-  const {cusName,cusPhone,cusType,loyaltyPoints,address,freeServiceCredit}=req.body;
-  q('INSERT INTO Customer (cusName,cusPhone,cusType,loyaltyPoints,address,freeServiceCredit) VALUES (?,?,?,?,?,?)',
-    [cusName,cusPhone||null,cusType??false,loyaltyPoints??0,address||null,freeServiceCredit??0])
+  const {cusName,cusPhone,cusType,loyaltyPoints,cusAddress,freeServiceCredit}=req.body;
+  q('INSERT INTO Customer (cusName,cusPhone,cusType,loyaltyPoints,cusAddress,freeServiceCredit) VALUES (?,?,?,?,?,?)',
+    [cusName,cusPhone||null,cusType??false,loyaltyPoints??0,cusAddress||null,freeServiceCredit??0])
     .then(r=>res.status(201).json({message:'Customer created',cusID:r.insertId}))
     .catch(e=>res.status(500).json({error:e.message}));
 });
 app.patch ('/api/customers/:id', (req,res) => {
-  const fields={cusName:1,cusPhone:1,cusType:1,loyaltyPoints:1,address:1,freeServiceCredit:1};
+  const fields={cusName:1,cusPhone:1,cusType:1,loyaltyPoints:1,cusAddress:1,freeServiceCredit:1};
   const updates=[],params=[];
   for(const k of Object.keys(fields)) if(req.body[k]!==undefined){updates.push(`${k}=?`);params.push(req.body[k]);}
   if(!updates.length) return res.status(400).json({error:'No fields to update'});

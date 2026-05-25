@@ -7,7 +7,9 @@ CREATE TABLE Customer
     cusName varchar(255),
     cusPhone varchar(20),
     cusType boolean,
+    cusAddress varchar(255),
     loyaltyPoints int(255),
+    freeServiceCredit int(255) DEFAULT 0,
     CONSTRAINT pk_customer PRIMARY KEY (cusID)
 );
 
@@ -32,6 +34,7 @@ CREATE TABLE Order_Slip
     cusID int(255),
     loadWeightKG decimal(10,2),
     isDone boolean,
+    notes text,
     CONSTRAINT pk_order PRIMARY KEY (orderID),
     CONSTRAINT fk_order_customer FOREIGN KEY (cusID) REFERENCES Customer(cusID)
 );
@@ -59,6 +62,7 @@ CREATE TABLE Invoice
     invoiceID int(255) NOT NULL AUTO_INCREMENT,
     amountToPay decimal(10,2),
     orderID int(255),
+    invoiceDate datetime default now(),
     CONSTRAINT pk_invoice PRIMARY KEY (invoiceID),
     CONSTRAINT fk_invoice_order FOREIGN KEY (orderID) REFERENCES Order_Slip(orderID)
 );
@@ -76,7 +80,7 @@ CREATE TABLE EWalletOrCard
 (
     EinvoiceID int(255) NOT NULL,
     providerName varchar(255),
-    transactionID int(255),
+    transactionID varchar(255),
     amountPaid decimal(10,2),
     CONSTRAINT pk_ewallet PRIMARY KEY (EinvoiceID),
     CONSTRAINT fk_ewallet_invoice FOREIGN KEY (EinvoiceID) REFERENCES Invoice(invoiceID)

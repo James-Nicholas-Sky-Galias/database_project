@@ -614,7 +614,7 @@
     function renderCustomers() {
       const {items,page,total} = paginate(state.customers, pages.cus); pages.cus=page;
       document.getElementById('customers-tbody').innerHTML = items.map(c => `
-        <tr><td>${c.cusID}</td><td>${c.cusName}</td><td>${c.cusPhone||''}</td><td>${c.address||''}</td>
+        <tr><td>${c.cusID}</td><td>${c.cusName}</td><td>${c.cusPhone||''}</td><td>${c.cusAddress||''}</td>
         <td>${typeBadge(c.cusType)}</td><td>${c.loyaltyPoints||0}</td><td>${c.freeServiceCredit||0}</td></tr>
       `).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px;">No customers</td></tr>';
       setPagination('cus',page,total);
@@ -708,7 +708,7 @@
     /* ── ORDERS ── */
     function renderOrders() {
       const pending=state.orders.filter(o=>!o.isDone).length, done=state.orders.filter(o=>o.isDone).length;
-      const unpaid=state.orders.filter(o=>parseInt(o.isPaid)!==1).length;
+      const unpaid=state.orders.filter(o=>parseInt(o.isDone)!==1).length;
       document.getElementById('order-stats').innerHTML = [
         ['Total Orders',state.orders.length],['Pending',pending],['Completed',done],['Unpaid',unpaid,true]
       ].map(([l,v,w])=>`<div class="card"><div class="card-label">${l}</div><div class="card-value"${w?' style="color:#ffd166;"':''}>${v}</div></div>`).join('');
@@ -922,7 +922,7 @@
       const found=state.customers.find(c=>c.cusName?.toLowerCase()===name.toLowerCase());
       if(!found){ statusEl.textContent='No customer found. Use New Customer to create one.'; document.getElementById('existing-customer-id').value=''; document.getElementById('existing-customer-details').style.display='none'; return; }
       document.getElementById('customer-phone-existing').value=found.cusPhone||'';
-      document.getElementById('customer-address-existing').value=found.address||'';
+      document.getElementById('customer-address-existing').value=found.cusAddress||'';
       document.getElementById('customer-type-existing').value=(found.cusType===true||found.cusType==='student')?'student':'regular';
       document.getElementById('existing-customer-details').style.display='block';
       document.getElementById('existing-customer-id').value=found.cusID;
@@ -993,11 +993,11 @@
           cusID=customer.cusID; loyaltyPts=customer.loyaltyPoints||0; freeCredit=customer.freeServiceCredit||0;
           const upd={};
           if(customer.cusName!==cusName) upd.cusName=cusName;
-          if(customer.address!==cusAddress) upd.address=cusAddress;
+          if(customer.cusAddress!==cusAddress) upd.cusAddress=cusAddress;
           if(customer.cusType!==cusType) upd.cusType=cusType;
           if(Object.keys(upd).length) await apiCall(`/customers/${cusID}`,'PATCH',upd);
         } else {
-          const cr=await apiCall('/customers','POST',{cusName,cusPhone,cusType,loyaltyPoints:0,address:cusAddress,freeServiceCredit:0});
+          const cr=await apiCall('/customers','POST',{cusName,cusPhone,cusType,loyaltyPoints:0,cusAddress:cusAddress,freeServiceCredit:0});
           cusID=cr.cusID; if(!cusID) throw new Error('Failed to create customer');
         }
 
