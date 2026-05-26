@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -21,10 +21,10 @@
 
     /* Headers */
     .header { background:#fff; border-radius:0 0 60% 60%/0 0 40px 40px; padding:6px 0 14px; text-align:center; }
-    .header-logo { height:90px; display:block; margin:0 auto; object-fit:contain; }
+    .header-logo { height:140px; display:block; margin:0 auto; object-fit:contain; }
     .subpage-header { background:#fff; padding:14px 20px 18px; display:flex; align-items:center; gap:14px; }
     .subpage-title { font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--navy); }
-    .subpage-logo { height:48px; margin-left:auto; }
+    .subpage-logo { height: 90px; margin-left:auto; }
 
     /* Buttons */
     .back-btn { background:var(--navy); border:none; color:#fff; width:38px; height:38px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; transition:background .2s; }
@@ -212,7 +212,7 @@
 
   <!-- HOME -->
   <div id="page-home" class="page active">
-    <div class="header"><img class="header-logo" src="./logo.png" alt="Jomitch Laundry Shop"></div>
+    <div class="header"><img class="header-logo" src="./logoJomitch.png" alt="Jomitch Laundry Shop"></div>
     <div class="main">
       <div class="top-row">
         <div class="date-card">
@@ -242,7 +242,7 @@
     <div class="subpage-header">
       <button class="back-btn" onclick="goTo('home')"><i class="fa-solid fa-arrow-left"></i></button>
       <span class="subpage-title">History</span>
-      <img class="subpage-logo" src="./logo.png" alt="Jomitch">
+      <img class="subpage-logo" src="./logoJomitch.png" alt="Jomitch">
     </div>
     <div class="content-wrap" style="max-width:560px;">
       <div class="history-menu-grid">
@@ -411,7 +411,7 @@
         <input type="hidden" id="existing-customer-id">
         <div id="existing-customer-details" style="display:none;">
           <div class="order-grid-name" style="margin-bottom:10px;">
-            <div class="order-field-btn"><input type="text" id="customer-phone-existing" placeholder="PHONE NUMBER"></div>
+            <div class="order-field-btn"><input type="text" id="customer-phone-existing" placeholder="PHONE NUMBER" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
             <div class="order-field-btn"><input type="text" id="customer-address-existing" placeholder="ADDRESS"></div>
             <div class="order-field-btn" style="justify-content:space-between;">
               <span style="font-size:13px;color:var(--text-muted);white-space:nowrap;margin-right:6px;">TYPE</span>
@@ -425,13 +425,13 @@
 
       <div id="new-customer-section" style="display:none;">
         <div class="order-grid-name" style="margin-bottom:10px;">
-          <div class="order-field-btn"><input type="text" id="customer-fname" placeholder="FIRST NAME"></div>
-          <div class="order-field-btn"><input type="text" id="customer-lname" placeholder="LAST NAME"></div>
-          <div class="order-field-btn"><input type="text" id="customer-mi" placeholder="M.I."></div>
+          <div class="order-field-btn"><input type="text" id="customer-fname" placeholder="FIRST NAME" oninput="this.value=this.value.replace(/[^a-zA-Z\s]/g,'')"></div>
+          <div class="order-field-btn"><input type="text" id="customer-lname" placeholder="LAST NAME" oninput="this.value=this.value.replace(/[^a-zA-Z\s]/g,'')"></div>
+          <div class="order-field-btn"><input type="text" id="customer-mi" placeholder="M.I." oninput="this.value=this.value.replace(/[^a-zA-Z\s]/g,'')"></div>
         </div>
         <div class="order-grid" style="margin-bottom:10px;">
           <div class="order-field-btn" style="grid-column:span 2/span 2;"><input type="text" id="customer-address-new" placeholder="ADDRESS" style="width:100%;"></div>
-          <div class="order-field-btn"><input type="text" id="customer-phone-new" placeholder="PHONE NUMBER"></div>
+          <div class="order-field-btn"><input type="text" id="customer-phone-new" placeholder="PHONE NUMBER" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
         </div>
         <div class="order-grid-2" style="margin-bottom:10px;">
           <div class="order-field-btn" style="justify-content:space-between;">
@@ -708,7 +708,7 @@
     /* ── ORDERS ── */
     function renderOrders() {
       const pending=state.orders.filter(o=>!o.isDone).length, done=state.orders.filter(o=>o.isDone).length;
-      const unpaid=state.orders.filter(o=>parseInt(o.isDone)!==1).length;
+      const unpaid=state.orders.filter(o=>parseInt(o.isPaid)!==1).length;
       document.getElementById('order-stats').innerHTML = [
         ['Total Orders',state.orders.length],['Pending',pending],['Completed',done],['Unpaid',unpaid,true]
       ].map(([l,v,w])=>`<div class="card"><div class="card-label">${l}</div><div class="card-value"${w?' style="color:#ffd166;"':''}>${v}</div></div>`).join('');
@@ -840,7 +840,7 @@
       updateOrderSummary();
     }
 
-    function onBatchWeightChange(id,val){ const b=batches.find(x=>x.id===id); if(b){b.weight=val;renderBatches();} }
+    function onBatchWeightChange(id,val){ const b=batches.find(x=>x.id===id); if(b){b.weight=val;updateBatchHeader(id);updateOrderSummary();} }
     function onBatchServiceChange(id,cb){ const b=batches.find(x=>x.id===id); if(!b) return; const sid=parseInt(cb.value); cb.checked?b.serviceIDs.includes(sid)||b.serviceIDs.push(sid):b.serviceIDs=b.serviceIDs.filter(s=>s!==sid); updateBatchHeader(id); updateOrderSummary(); }
     function onBatchOtherChange(id,cb){ const b=batches.find(x=>x.id===id); if(!b) return; b.hasOther=cb.checked; document.getElementById(`batch-other-field-${id}`).style.display=cb.checked?'block':'none'; if(!cb.checked){b.otherName='';b.otherPrice=0;} updateBatchHeader(id); updateOrderSummary(); }
     function onBatchOtherName(id,val){ const b=batches.find(x=>x.id===id); if(b) b.otherName=val; }
