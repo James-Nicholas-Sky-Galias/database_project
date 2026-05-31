@@ -10,13 +10,15 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 const db = mysql.createConnection({
-  host:     process.env.DB_HOST     || 'localhost',
-  user:     process.env.DB_USER     || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME     || 'jomitch_laundry_shop'
+  host:     process.env.DB_HOST,
+  port:     process.env.DB_PORT,
+  user:     process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  ssl: {rejectUnauthorized: false}
 });
 
-const dbName = process.env.DB_NAME || 'jomitch_laundry_shop';
+const dbName = process.env.DB_NAME;
 
 
 const q = (sql, p=[]) => new Promise((res,rej) => db.query(sql,p,(e,r)=>e?rej(e):res(r)));
@@ -60,8 +62,6 @@ async function migrate() {
   await addCol('Order_Slip', 'notes',             'TEXT');
   await addCol('Invoice',    'invoiceDate',       'DATETIME DEFAULT CURRENT_TIMESTAMP');
   await addCol('Invoice',    'isPaid',            'BOOLEAN DEFAULT FALSE');
-  await fixTable('walkin',   'WserviceID', 'walkInID');
-  await fixTable('Delivery', 'DserviceID', 'deliveryID');
   console.log('Migrations complete.');
 }
 
@@ -239,9 +239,9 @@ app.post('/api/payments/ewallet', async (req,res) => {
 
 
 app.post ('/api/delivery',         (req,res) => {
-  const {deliveryAddress,orderID}=req.body;
+  const {serviceID,deliveryAddress,orderID}=req.body;
   if(!orderID||!deliveryAddress) return res.status(400).json({error:'orderID and deliveryAddress required'});
-  q('INSERT INTO Delivery (deliveryStatus,deliveryAddress,orderID) VALUES (false,?,?)',[deliveryAddress,orderID])
+  q('INSERT INTO Delivery (DserviceID,deliveryStatus,deliveryAddress,orderID) VALUES (?,false,?,?)',[serviceID,deliveryAddress,orderID])
     .then(()=>res.status(201).json({message:'Delivery record created'}))
     .catch(e=>res.status(500).json({error:e.message}));
 });
@@ -249,10 +249,10 @@ app.patch('/api/delivery/:id/status',(req,res)=> send(res, q('UPDATE Delivery SE
 
 
 app.post('/api/walkin', (req,res) => {
-  const {custName,dateAndTime,orderID}=req.body;
+  const {serviceID,custName,dateAndTime,orderID}=req.body;
   if(!orderID) return res.status(400).json({error:'orderID is required'});
   const dt=dateAndTime||new Date().toISOString().slice(0,19).replace('T',' ');
-  q('INSERT INTO walkin (custName,dateAndTime,orderID) VALUES (?,?,?)',[custName||'',dt,orderID])
+  q('INSERT INTO walkin (WserviceID,custName,dateAndTime,orderID) VALUES (?,?,?,?)',[serviceID,custName||'',dt,orderID])
     .then(()=>res.status(201).json({message:'Walk-in record created'}))
     .catch(e=>res.status(500).json({error:e.message}));
 });

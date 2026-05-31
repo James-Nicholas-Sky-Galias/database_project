@@ -1,5 +1,3 @@
-create database if not exists jomitch_laundry_shop;
-use jomitch_laundry_shop;
 
 CREATE TABLE Customer
 (
@@ -33,7 +31,9 @@ CREATE TABLE Order_Slip
     orderID int(255) NOT NULL AUTO_INCREMENT,
     cusID int(255),
     loadWeightKG decimal(10,2),
-    isDone boolean,
+    isDone boolean DEFAULT false,
+    isPaid boolean DEFAULT false,
+    loadCount int DEFAULT 1,
     notes text,
     CONSTRAINT pk_order PRIMARY KEY (orderID),
     CONSTRAINT fk_order_customer FOREIGN KEY (cusID) REFERENCES Customer(cusID)
@@ -63,6 +63,7 @@ CREATE TABLE Invoice
     amountToPay decimal(10,2),
     orderID int(255),
     invoiceDate datetime default now(),
+    isPaid boolean DEFAULT false,
     CONSTRAINT pk_invoice PRIMARY KEY (invoiceID),
     CONSTRAINT fk_invoice_order FOREIGN KEY (orderID) REFERENCES Order_Slip(orderID)
 );

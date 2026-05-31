@@ -1024,8 +1024,9 @@
         if(payMethod==='cash') await apiCall('/payments/cash','POST',{invoiceID,amountPaid:amtGiven,changeGiven:change});
         else if(payMethod==='ewallet') await apiCall('/payments/ewallet','POST',{invoiceID,providerName:provider,transactionID:txnID,amountPaid:amtToPay});
 
-        if(isDelivery) await apiCall('/delivery','POST',{deliveryAddress:delivAddr,orderID});
-        else await apiCall('/walkin','POST',{custName:cusName,dateAndTime:new Date().toISOString().slice(0,19).replace('T',' '),orderID});
+        const firstServiceID = Array.from(allServiceIDs)[0] || null;
+        if(isDelivery) await apiCall('/delivery','POST',{serviceID:firstServiceID,deliveryAddress:delivAddr,orderID});
+        else await apiCall('/walkin','POST',{serviceID:firstServiceID,custName:cusName,dateAndTime:new Date().toISOString().slice(0,19).replace('T',' '),orderID});
 
         await apiCall(`/customers/${cusID}`,'PATCH',{loyaltyPoints:loyaltyPts,freeServiceCredit:freeCredit});
 
