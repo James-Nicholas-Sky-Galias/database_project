@@ -578,12 +578,12 @@
       } catch(e) { console.error('Load failed:',e); }
     }
 
-    function updateInfoboard() {
-      const pending  = state.orders.filter(o => !o.isDone);
-      document.getElementById('info-pickup-onsite').textContent  = pending.filter(o => !o.deliveryAddress).length;
-      document.getElementById('info-delivery').textContent       = pending.filter(o =>  o.deliveryAddress).length;
-      document.getElementById('info-pickup-laundry').textContent = state.orders.filter(o => o.isDone).length;
-    }
+  function updateInfoboard() {
+    const pending = state.orders.filter(o => !o.isDone);
+    document.getElementById('info-pickup-onsite').textContent  = pending.filter(o => o.returnMethod === 'walkin').length;
+    document.getElementById('info-delivery').textContent       = pending.filter(o => o.returnMethod === 'delivery').length;
+    document.getElementById('info-pickup-laundry').textContent = state.orders.filter(o => o.isDone).length;
+  }
 
     const statusBadge = done  => done ? '<span class="badge badge-done">Done</span>' : '<span class="badge badge-pending">Pending</span>';
     const typeBadge   = type  => (type===true||type==='student'||type===1) ? '<span class="badge badge-student">Student</span>' : '<span class="badge badge-regular">Regular</span>';
@@ -721,7 +721,11 @@
           <td style="max-width:220px;">${buildBatchCell(o)}</td>
           <td>${o.loadWeightKG} kg</td>
           <td style="font-family:'Barlow Condensed',sans-serif;font-weight:800;color:var(--accent-cyan);font-size:16px;">${o.invoiceAmount?'₱'+parseFloat(o.invoiceAmount).toFixed(2):'—'}</td>
-          <td>${o.deliveryAddress||'—'}</td>
+          <td>
+            ${o.dropoffMethod === 'pickup' ? `Pickup: ${o.pickupAddress||'—'}` : 'Walk-in'}
+            → 
+            ${o.returnMethod === 'delivery' ? `Deliver: ${o.deliveryAddress||'—'}` : 'Customer pickup'}
+          </td>
           <td><div style="display:flex;flex-direction:column;gap:5px;">${statusBadge(o.isDone)}${paid?'<span class="badge badge-paid">Paid</span>':'<span class="badge badge-paylater">Unpaid</span>'}</div></td>
           <td><div style="display:flex;flex-direction:column;gap:5px;">
             <button class="btn" style="background:${o.isDone?'#27ae60':'#e67e22'};" onclick="updateOrderStatus(${o.orderID},${!o.isDone})">${o.isDone?'Mark Pending':'Mark Done'}</button>
@@ -876,6 +880,7 @@
 
     function initNewOrder() {
       window._isDelivery=false; window._customerMode='existing';
+      window._dropoffMethod = 'walkin';
       const now=new Date(), pad=n=>String(n).padStart(2,'0');
       document.getElementById('order-date').value=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
       document.getElementById('order-time').value=`${pad(now.getHours())}:${pad(now.getMinutes())}`;
@@ -888,6 +893,12 @@
       document.getElementById('payment-method').value='cash';
       selectCustomerMode('existing');
       batches=[]; batchCounter=0; addBatch();
+    }
+
+    function setDropoff(val) {
+      window._dropoffMethod = val;
+      document.getElementById('pickup-address-field').style.display = val === 'pickup' ? 'block' : 'none';
+      document.getElementById('dropoff-status-span').textContent = val === 'pickup' ? 'STAFF PICKUP' : 'WALK-IN';
     }
 
     function setDelivery(val) {
@@ -1024,9 +1035,12 @@
         if(payMethod==='cash') await apiCall('/payments/cash','POST',{invoiceID,amountPaid:amtGiven,changeGiven:change});
         else if(payMethod==='ewallet') await apiCall('/payments/ewallet','POST',{invoiceID,providerName:provider,transactionID:txnID,amountPaid:amtToPay});
 
-        const firstServiceID = Array.from(allServiceIDs)[0] || null;
-        if(isDelivery) await apiCall('/delivery','POST',{serviceID:firstServiceID,deliveryAddress:delivAddr,orderID});
-        else await apiCall('/walkin','POST',{serviceID:firstServiceID,custName:cusName,dateAndTime:new Date().toISOString().slice(0,19).replace('T',' '),orderID});
+        const dropoffMethod = window._dropoffMethod || 'walkin';
+        const pickupAddr = document.getElementById('pickup-address')?.value?.trim() || null;
+        await apiCall('/dropoff', 'POST', { orderID, method: dropoffMethod, pickupAddress: pickupAddr });
+
+        const returnMethod = window._isDelivery ? 'delivery' : 'walkin';
+        await apiCall('/return', 'POST', { orderID, method: returnMethod, deliveryAddress: delivAddr || null });
 
         await apiCall(`/customers/${cusID}`,'PATCH',{loyaltyPoints:loyaltyPts,freeServiceCredit:freeCredit});
 

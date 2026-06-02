@@ -24,7 +24,31 @@ const dbName = process.env.DB_NAME;
 
 const q = (sql, p=[]) => new Promise((res,rej) => db.query(sql,p,(e,r)=>e?rej(e):res(r)));
 
+async function addPoints(cusID, pointsToAdd) {
+  const [customer] = await q(
+    'SELECT loyaltyPoints, freeServiceCredit FROM Customer WHERE cusID=?',
+    [cusID]
+  );
 
+  if (!customer) throw new Error('Customer not found');
+
+  let loyaltyPoints = (customer.loyaltyPoints || 0) + pointsToAdd;
+  let freeServiceCredit = customer.freeServiceCredit || 0;
+
+  if (loyaltyPoints >= 10) {
+    freeServiceCredit += Math.floor(loyaltyPoints / 10);
+    loyaltyPoints %= 10;
+  }
+
+  await q(
+    `UPDATE Customer
+     SET loyaltyPoints=?, freeServiceCredit=?
+     WHERE cusID=?`,
+    [loyaltyPoints, freeServiceCredit, cusID]
+  );
+
+  return { loyaltyPoints, freeServiceCredit };
+}
 
 async function migrate() {
   console.log('Running migrations...');
@@ -41,16 +65,11 @@ async function migrate() {
   console.log('Migrations complete.');
 }
 
-
-
 const send  = (res,p) => p.then(r=>res.json(r)).catch(e=>res.status(500).json({error:e.message}));
 const send1 = (res,p,msg='Not found') => p.then(r=>{ if(!r.length) return res.status(404).json({error:msg}); res.json(r[0]); }).catch(e=>res.status(500).json({error:e.message}));
 
-
-
 app.get ('/', (_,res) => res.sendFile(path.join(__dirname,'../frontend/index.html')));
 app.get ('/api/ping', (_,res) => res.json({message:'Backend is alive!'}));
-
 
 app.get   ('/api/customers',    (_,res) => send(res, q('SELECT * FROM Customer ORDER BY cusID DESC')));
 app.get   ('/api/customers/:id',  (req,res) => send1(res, q('SELECT * FROM Customer WHERE cusID=?',[req.params.id]),'Customer not found'));
@@ -82,14 +101,13 @@ app.post  ('/api/services',    (req,res)=> {
 });
 app.delete('/api/services/:id', (req,res)=> send(res, q('DELETE FROM Service WHERE serviceID=?',[req.params.id]).then(()=>({message:'Service deleted'}))));
 
-
 app.get('/api/orders', (_,res) => send(res, q(`
 SELECT
   o.*,
   c.cusName,
   c.cusType,
   svc.serviceNames,
-  d.deliveryAddress,
+  r.deliveryAddress,
   i.invoiceID,
   i.isPaid,
   i.amountToPay AS invoiceAmount
@@ -114,8 +132,7 @@ LEFT JOIN (
 ) svc
   ON o.orderID = svc.orderID
 
-LEFT JOIN Dropoff d
-  ON o.orderID = d.orderID
+LEFT JOIN OrderReturn r ON o.orderID = r.orderID
 
 LEFT JOIN Invoice i
   ON o.orderID = i.orderID
@@ -151,7 +168,28 @@ app.post('/api/orders', async (req,res) => {
 });
 
 app.patch ('/api/orders/:id/status',  (req,res)=> send(res, q('UPDATE Order_Slip SET isDone=? WHERE orderID=?',[req.body.isDone?1:0,req.params.id]).then(()=>({message:'Order status updated'}))));
-app.patch ('/api/orders/:id/done',    (req,res)=> send(res, q('UPDATE Order_Slip SET isDone=true WHERE orderID=?',[req.params.id]).then(()=>({message:'Order marked as done'}))));
+app.patch('/api/orders/:id/done', async (req, res) => {
+  try {
+    await q(
+      'UPDATE Order_Slip SET isDone=true WHERE orderID=?',
+      [req.params.id]
+    );
+
+    const [order] = await q(
+      'SELECT cusID FROM Order_Slip WHERE orderID=?',
+      [req.params.id]
+    );
+
+    if (order) {
+      await addPoints(order.cusID, 1);
+    }
+
+    res.json({ message: 'Order marked as done' });
+
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
 app.patch('/api/orders/:id/payment', async (req,res) => {
   try {
@@ -181,8 +219,8 @@ app.delete('/api/orders/:id', async (req,res) => {
       await q('DELETE FROM Invoice WHERE orderID=?',[id]);
     }
     for(const sql of [
-      'DELETE FROM Delivery WHERE orderID=?',
-      'DELETE FROM WalkIn WHERE orderID=?',
+      'DELETE FROM Dropoff WHERE orderID=?',
+      'DELETE FROM OrderReturn WHERE orderID=?',
       'DELETE FROM Order_Service WHERE orderID=?',
       'DELETE FROM Order_Slip WHERE orderID=?'
     ]) await q(sql,[id]);
@@ -250,7 +288,7 @@ app.post('/api/dropoff', (req, res) => {
 app.post('/api/return', (req, res) => {
   const { orderID, method, deliveryAddress } = req.body;
   if(!orderID || !method) return res.status(400).json({ error: 'orderID and method required' });
-  q('INSERT INTO `Return` (orderID, method, deliveryAddress, deliveryStatus) VALUES (?, ?, ?, false)',
+  q('INSERT INTO OrderReturn (orderID, method, deliveryAddress, deliveryStatus) VALUES (?, ?, ?, false)',
     [orderID, method, deliveryAddress || null])
     .then(() => res.status(201).json({ message: 'Return recorded' }))
     .catch(e => res.status(500).json({ error: e.message }));
@@ -258,7 +296,7 @@ app.post('/api/return', (req, res) => {
 
 // Update return delivery status
 app.patch('/api/return/:returnID/status', (req, res) => {
-  q('UPDATE `Return` SET deliveryStatus = true WHERE returnID = ?', [req.params.returnID])
+  q('UPDATE OrderReturn SET deliveryStatus = true WHERE returnID = ?', [req.params.returnID])
     .then(() => res.json({ message: 'Return status updated' }))
     .catch(e => res.status(500).json({ error: e.message }));
 });
@@ -281,8 +319,7 @@ db.connect((err) => {
     console.error('Database connection failed:', err);
     return;
   }
-
   console.log('Connected to Aiven MySQL');
+  migrate();
 });
-migrate();
 app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));

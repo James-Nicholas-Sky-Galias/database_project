@@ -72,9 +72,6 @@ CREATE TABLE IF NOT EXISTS EWalletOrCard
     CONSTRAINT fk_ewallet_invoice FOREIGN KEY (EinvoiceID) REFERENCES Invoice(invoiceID)
 );
 
-DROP TABLE IF EXISTS Delivery;
-DROP TABLE IF EXISTS WalkIn;
-
 CREATE TABLE IF NOT EXISTS Dropoff 
 (
     dropoffID int NOT NULL AUTO_INCREMENT,
@@ -85,7 +82,7 @@ CREATE TABLE IF NOT EXISTS Dropoff
     CONSTRAINT fk_dropoff_order FOREIGN KEY (orderID) REFERENCES Order_Slip(orderID)
 );
 
-CREATE TABLE IF NOT EXISTS `Return` (
+CREATE TABLE IF NOT EXISTS OrderReturn (
     returnID int NOT NULL AUTO_INCREMENT,
     orderID int,
     method ENUM('walkin', 'delivery'),
