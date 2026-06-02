@@ -114,16 +114,44 @@ app.delete('/api/services/:id', (req,res)=> send(res, q('DELETE FROM Service WHE
 
 
 app.get('/api/orders', (_,res) => send(res, q(`
-  SELECT o.*, c.cusName, c.cusType,
-    COALESCE(GROUP_CONCAT(DISTINCT s.serviceName ORDER BY s.serviceName SEPARATOR ', '),'') AS serviceNames,
-    d.deliveryAddress, i.invoiceID, i.isPaid, i.amountToPay AS invoiceAmount
-  FROM Order_Slip o
-  JOIN Customer c ON o.cusID=c.cusID
-  LEFT JOIN Order_Service os ON o.orderID=os.orderID
-  LEFT JOIN Service s        ON os.serviceID=s.serviceID
-  LEFT JOIN Delivery d       ON o.orderID=d.orderID
-  LEFT JOIN Invoice i        ON o.orderID=i.orderID
-  GROUP BY o.orderID ORDER BY o.orderID DESC`)));
+SELECT
+  o.*,
+  c.cusName,
+  c.cusType,
+  svc.serviceNames,
+  d.deliveryAddress,
+  i.invoiceID,
+  i.isPaid,
+  i.amountToPay AS invoiceAmount
+
+FROM Order_Slip o
+
+JOIN Customer c
+  ON o.cusID = c.cusID
+
+LEFT JOIN (
+  SELECT
+    os.orderID,
+    GROUP_CONCAT(
+      DISTINCT s.serviceName
+      ORDER BY s.serviceName
+      SEPARATOR ', '
+    ) AS serviceNames
+  FROM Order_Service os
+  JOIN Service s
+    ON os.serviceID = s.serviceID
+  GROUP BY os.orderID
+) svc
+  ON o.orderID = svc.orderID
+
+LEFT JOIN Delivery d
+  ON o.orderID = d.orderID
+
+LEFT JOIN Invoice i
+  ON o.orderID = i.orderID
+
+ORDER BY o.orderID DESC
+`)));
 
 app.get('/api/orders/:id', async (req,res) => {
   try {
