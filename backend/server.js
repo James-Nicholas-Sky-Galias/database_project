@@ -3,6 +3,7 @@ const express = require('express');
 const mysql   = require('mysql2');
 const cors    = require('cors');
 const path    = require('path');
+const fs      = require('fs');
 
 const app = express();
 app.use(cors());
@@ -26,50 +27,19 @@ const q = (sql, p=[]) => new Promise((res,rej) => db.query(sql,p,(e,r)=>e?rej(e)
 
 
 async function migrate() {
-  const colExists = async (t,c) => (await q(
-    'SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND COLUMN_NAME=?',
-    [dbName,t,c]
-  )).length > 0;
+  console.log('Running migrations...');
+  const sql = fs.readFileSync(path.join(__dirname, '../schema/jomitchTableCreate.sql'), 'utf8');
+  const statements = sql
+    .split(';')
+    .map(s => s.trim())
+    .filter(s => s.length > 0 && !s.startsWith('--') && !s.startsWith('DELIMITER'));
 
-  const addCol = async (t,c,def) => {
-    if (!await colExists(t,c)) await q(`ALTER TABLE \`${t}\` ADD COLUMN \`${c}\` ${def}`).catch(e=>console.error(`addCol ${t}.${c}:`,e.message));
-  };
+  for (const statement of statements) {
+    await q(statement).catch(e => console.error('Migration error:', e.message));
+  }
 
-  const dropFKs = async (t,c) => {
-    const rows = await q(
-      `SELECT kcu.CONSTRAINT_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE kcu
-       JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc USING(CONSTRAINT_NAME,TABLE_SCHEMA,TABLE_NAME)
-       WHERE kcu.TABLE_SCHEMA=? AND kcu.TABLE_NAME=? AND kcu.COLUMN_NAME=? AND tc.CONSTRAINT_TYPE='FOREIGN KEY'`,
-      [dbName,t,c]
-    ).catch(()=>[]);
-    for (const r of rows) await q(`ALTER TABLE \`${t}\` DROP FOREIGN KEY \`${r.CONSTRAINT_NAME}\``).catch(()=>{});
-  };
-
-  const fixTable = async (t, pkCol, newID) => {
-    await dropFKs(t, pkCol);
-    const pkCols = (await q(
-      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND CONSTRAINT_NAME='PRIMARY'`,
-      [dbName,t]
-    ).catch(()=>[])).map(r=>r.COLUMN_NAME);
-    if (pkCols.includes(pkCol)) await q(`ALTER TABLE \`${t}\` DROP PRIMARY KEY`).catch(e=>console.error(e.message));
-    if (await colExists(t,pkCol)) await q(`ALTER TABLE \`${t}\` MODIFY COLUMN \`${pkCol}\` INT DEFAULT NULL`).catch(e=>console.error(e.message));
-    await addCol(t, newID, 'INT NOT NULL AUTO_INCREMENT PRIMARY KEY FIRST');
-  };
-
-  await addCol('Customer',   'cusAddress',           'VARCHAR(255)');
-  await addCol('Customer',   'freeServiceCredit', 'INT DEFAULT 0');
-  await addCol('Order_Slip', 'loadCount',         'INT DEFAULT 1');
-  await addCol('Order_Slip', 'notes',             'TEXT');
-  await addCol('Invoice',    'invoiceDate',       'DATETIME DEFAULT CURRENT_TIMESTAMP');
-  await addCol('Invoice',    'isPaid',            'BOOLEAN DEFAULT FALSE');
   console.log('Migrations complete.');
 }
-
-db.connect(err => {
-  if (err) { console.error('DB connection failed:', err); return; }
-  console.log('Connected to MySQL');
-  migrate();
-});
 
 
 
@@ -144,7 +114,7 @@ LEFT JOIN (
 ) svc
   ON o.orderID = svc.orderID
 
-LEFT JOIN Delivery d
+LEFT JOIN Dropoff d
   ON o.orderID = d.orderID
 
 LEFT JOIN Invoice i
@@ -212,7 +182,7 @@ app.delete('/api/orders/:id', async (req,res) => {
     }
     for(const sql of [
       'DELETE FROM Delivery WHERE orderID=?',
-      'DELETE FROM walkin WHERE orderID=?',
+      'DELETE FROM WalkIn WHERE orderID=?',
       'DELETE FROM Order_Service WHERE orderID=?',
       'DELETE FROM Order_Slip WHERE orderID=?'
     ]) await q(sql,[id]);
@@ -266,26 +236,53 @@ app.post('/api/payments/ewallet', async (req,res) => {
 });
 
 
-app.post ('/api/delivery',         (req,res) => {
-  const {serviceID,deliveryAddress,orderID}=req.body;
-  if(!orderID||!deliveryAddress) return res.status(400).json({error:'orderID and deliveryAddress required'});
-  q('INSERT INTO Delivery (DserviceID,deliveryStatus,deliveryAddress,orderID) VALUES (?,false,?,?)',[serviceID,deliveryAddress,orderID])
-    .then(()=>res.status(201).json({message:'Delivery record created'}))
-    .catch(e=>res.status(500).json({error:e.message}));
+// Create dropoff record
+app.post('/api/dropoff', (req, res) => {
+  const { orderID, method, pickupAddress } = req.body;
+  if(!orderID || !method) return res.status(400).json({ error: 'orderID and method required' });
+  q('INSERT INTO Dropoff (orderID, method, pickupAddress) VALUES (?, ?, ?)',
+    [orderID, method, pickupAddress || null])
+    .then(() => res.status(201).json({ message: 'Dropoff recorded' }))
+    .catch(e => res.status(500).json({ error: e.message }));
 });
-app.patch('/api/delivery/:id/status',(req,res)=> send(res, q('UPDATE Delivery SET deliveryStatus=? WHERE deliveryID=?',[req.body.deliveryStatus,req.params.id]).then(()=>({message:'Delivery status updated'}))));
 
+// Create return record
+app.post('/api/return', (req, res) => {
+  const { orderID, method, deliveryAddress } = req.body;
+  if(!orderID || !method) return res.status(400).json({ error: 'orderID and method required' });
+  q('INSERT INTO `Return` (orderID, method, deliveryAddress, deliveryStatus) VALUES (?, ?, ?, false)',
+    [orderID, method, deliveryAddress || null])
+    .then(() => res.status(201).json({ message: 'Return recorded' }))
+    .catch(e => res.status(500).json({ error: e.message }));
+});
 
-app.post('/api/walkin', (req,res) => {
-  const {serviceID,custName,dateAndTime,orderID}=req.body;
-  if(!orderID) return res.status(400).json({error:'orderID is required'});
-  const dt=dateAndTime||new Date().toISOString().slice(0,19).replace('T',' ');
-  q('INSERT INTO walkin (WserviceID,custName,dateAndTime,orderID) VALUES (?,?,?,?)',[serviceID,custName||'',dt,orderID])
-    .then(()=>res.status(201).json({message:'Walk-in record created'}))
-    .catch(e=>res.status(500).json({error:e.message}));
+// Update return delivery status
+app.patch('/api/return/:returnID/status', (req, res) => {
+  q('UPDATE `Return` SET deliveryStatus = true WHERE returnID = ?', [req.params.returnID])
+    .then(() => res.json({ message: 'Return status updated' }))
+    .catch(e => res.status(500).json({ error: e.message }));
+});
+
+// Get all returns (for order management)
+app.get('/api/return', (req, res) => {
+  q(`SELECT r.*, o.loadWeightKG, c.cusName 
+     FROM \`Return\` r 
+     JOIN Order_Slip o ON r.orderID = o.orderID 
+     JOIN Customer c ON o.cusID = c.cusID`)
+    .then(results => res.json(results))
+    .catch(e => res.status(500).json({ error: e.message }));
 });
 
 
 
 const PORT = process.env.PORT || 3001;
+db.connect((err) => {
+  if (err) {
+    console.error('Database connection failed:', err);
+    return;
+  }
+
+  console.log('Connected to Aiven MySQL');
+});
+migrate();
 app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));

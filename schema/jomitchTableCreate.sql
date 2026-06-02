@@ -1,5 +1,4 @@
-
-CREATE TABLE Customer
+CREATE TABLE IF NOT EXISTS Customer 
 (
     cusID int(255) NOT NULL AUTO_INCREMENT,
     cusName varchar(255),
@@ -11,22 +10,8 @@ CREATE TABLE Customer
     CONSTRAINT pk_customer PRIMARY KEY (cusID)
 );
 
--- Trigger: whenever loyaltyPoints reaches 10+,
-DELIMITER $$
- 
-CREATE TRIGGER trg_loyalty_check
-BEFORE UPDATE ON Customer
-FOR EACH ROW
-BEGIN
-  IF NEW.loyaltyPoints >= 10 THEN
-    SET NEW.freeServiceCredit = NEW.freeServiceCredit + FLOOR(NEW.loyaltyPoints / 10);
-    SET NEW.loyaltyPoints     = NEW.loyaltyPoints % 10;
-  END IF;
-END$$
- 
-DELIMITER ;
 
-CREATE TABLE Order_Slip
+CREATE TABLE IF NOT EXISTS Order_Slip 
 (
     orderID int(255) NOT NULL AUTO_INCREMENT,
     cusID int(255),
@@ -39,7 +24,7 @@ CREATE TABLE Order_Slip
     CONSTRAINT fk_order_customer FOREIGN KEY (cusID) REFERENCES Customer(cusID)
 );
 
-CREATE TABLE Service
+CREATE TABLE IF NOT EXISTS Service 
 (
     serviceID int(255) NOT NULL AUTO_INCREMENT,
     serviceName varchar(255),
@@ -48,7 +33,7 @@ CREATE TABLE Service
     CONSTRAINT pk_service PRIMARY KEY (serviceID)
 );
 
-CREATE TABLE Order_Service
+CREATE TABLE IF NOT EXISTS Order_Service
 (
     orderID int(255) NOT NULL,
     serviceID int(255) NOT NULL,
@@ -57,7 +42,7 @@ CREATE TABLE Order_Service
     CONSTRAINT fk_order_service_service FOREIGN KEY (serviceID) REFERENCES Service(serviceID)
 );
 
-CREATE TABLE Invoice
+CREATE TABLE IF NOT EXISTS Invoice
 (
     invoiceID int(255) NOT NULL AUTO_INCREMENT,
     amountToPay decimal(10,2),
@@ -68,7 +53,7 @@ CREATE TABLE Invoice
     CONSTRAINT fk_invoice_order FOREIGN KEY (orderID) REFERENCES Order_Slip(orderID)
 );
 
-CREATE TABLE Cash
+CREATE TABLE IF NOT EXISTS Cash
 (
     CinvoiceID int(255) NOT NULL,
     amountPaid decimal(10,2),
@@ -77,7 +62,7 @@ CREATE TABLE Cash
     CONSTRAINT fk_cash_invoice FOREIGN KEY (CinvoiceID) REFERENCES Invoice(invoiceID)
 );
 
-CREATE TABLE EWalletOrCard
+CREATE TABLE IF NOT EXISTS EWalletOrCard
 (
     EinvoiceID int(255) NOT NULL,
     providerName varchar(255),
@@ -87,26 +72,25 @@ CREATE TABLE EWalletOrCard
     CONSTRAINT fk_ewallet_invoice FOREIGN KEY (EinvoiceID) REFERENCES Invoice(invoiceID)
 );
 
-CREATE TABLE Delivery
+DROP TABLE IF EXISTS Delivery;
+DROP TABLE IF EXISTS WalkIn;
+
+CREATE TABLE IF NOT EXISTS Dropoff 
 (
-    deliveryID int(255) NOT NULL AUTO_INCREMENT,
-    DserviceID int(255) NOT NULL,
-    deliveryStatus boolean,
-    deliveryAddress varchar(255),
-    orderID int(255),
-    CONSTRAINT pk_delivery PRIMARY KEY (deliveryID),
-    CONSTRAINT fk_delivery_service FOREIGN KEY (DserviceID) REFERENCES Service(serviceID),
-    CONSTRAINT fk_delivery_order FOREIGN KEY (orderID) REFERENCES Order_Slip(orderID)
+    dropoffID int NOT NULL AUTO_INCREMENT,
+    orderID int,
+    method ENUM('walkin', 'pickup'),
+    pickupAddress varchar(255),
+    CONSTRAINT pk_dropoff PRIMARY KEY (dropoffID),
+    CONSTRAINT fk_dropoff_order FOREIGN KEY (orderID) REFERENCES Order_Slip(orderID)
 );
 
-CREATE TABLE WalkIn
-(
-    walkInID int(255) NOT NULL AUTO_INCREMENT,
-    WserviceID int(255) NOT NULL,
-    custName varchar(255),
-    dateAndTime datetime,
-    orderID int(255),
-    CONSTRAINT pk_walkin PRIMARY KEY (walkInID),
-    CONSTRAINT fk_walkin_service FOREIGN KEY (WserviceID) REFERENCES Service(serviceID),
-    CONSTRAINT fk_walkin_order FOREIGN KEY (orderID) REFERENCES Order_Slip(orderID)
+CREATE TABLE IF NOT EXISTS `Return` (
+    returnID int NOT NULL AUTO_INCREMENT,
+    orderID int,
+    method ENUM('walkin', 'delivery'),
+    deliveryAddress varchar(255),
+    deliveryStatus boolean DEFAULT false,
+    CONSTRAINT pk_return PRIMARY KEY (returnID),
+    CONSTRAINT fk_return_order FOREIGN KEY (orderID) REFERENCES Order_Slip(orderID)
 );
