@@ -222,7 +222,7 @@
         </div>
         <div class="right-buttons">
           <button class="place-order-btn" onclick="goTo('new-order')"><span>PLACE ORDER</span><span class="plus-icon">+</span></button>
-          <button class="sec-btn" onclick="goTo('history')">HISTORY</button>
+          <button class="sec-btn" onclick="goTo('history')">TRANSACTION HISTORY</button>
           <button class="sec-btn" onclick="goTo('orders')">ORDER MANAGEMENT</button>
         </div>
       </div>
@@ -404,7 +404,7 @@
 
       <div id="existing-customer-section">
         <div class="order-grid-2" style="margin-bottom:10px;">
-          <div class="order-field-btn"><input type="text" id="customer-name-existing" placeholder="FULL NAME"></div>
+          <div class="order-field-btn"><input type="text" id="customer-name-existing" placeholder="FULL NAME"  list="customer-list" oninput="autoFillCustomer()"></div>
           <button class="btn" style="background:var(--accent-blue);font-size:14px;border-radius:12px;padding:0 16px;" onclick="lookupCustomerByName()"><i class="fa-solid fa-magnifying-glass"></i> FIND CUSTOMER</button>
         </div>
         <div id="customer-search-status" style="font-size:13px;color:var(--text-muted);margin-bottom:10px;min-height:18px;"></div>
@@ -425,9 +425,9 @@
 
       <div id="new-customer-section" style="display:none;">
         <div class="order-grid-name" style="margin-bottom:10px;">
-          <div class="order-field-btn"><input type="text" id="customer-fname" placeholder="FIRST NAME" oninput="this.value=this.value.replace(/[^a-zA-Z\s]/g,'')"></div>
-          <div class="order-field-btn"><input type="text" id="customer-lname" placeholder="LAST NAME" oninput="this.value=this.value.replace(/[^a-zA-Z\s]/g,'')"></div>
-          <div class="order-field-btn"><input type="text" id="customer-mi" placeholder="M.I." oninput="this.value=this.value.replace(/[^a-zA-Z\s]/g,'')"></div>
+          <div class="order-field-btn"><input type="text" id="customer-fname" placeholder="FIRST NAME" oninput="this.value=this.value.replace(/[^a-zA-Z\s]/g,'').toUpperCase()"></div>
+          <div class="order-field-btn"><input type="text" id="customer-lname" placeholder="LAST NAME" oninput="this.value=this.value.replace(/[^a-zA-Z\s]/g,'').toUpperCase()"></div>
+          <div class="order-field-btn"><input type="text" id="customer-mi" placeholder="M.I." oninput="this.value=this.value.replace(/[^a-zA-Z\s]/g,'').toUpperCase()"></div>
         </div>
         <div class="order-grid" style="margin-bottom:10px;">
           <div class="order-field-btn" style="grid-column:span 2/span 2;"><input type="text" id="customer-address-new" placeholder="ADDRESS" style="width:100%;"></div>
@@ -788,6 +788,29 @@
       batches=batches.filter(b=>b.id!==id); renderBatches(); updateOrderSummary();
     }
 
+    function autoFillCustomer() {
+      const name = document
+      .getElementById('customer-name-existing')
+      .value
+      .trim()
+      .toUpperCase();
+
+      const customer = state.customers.find(
+      c => c.cusName.toUpperCase() === name
+      );
+
+  if (!customer) return;
+
+  document.getElementById('existing-customer-id').value = customer.cusID;
+  document.getElementById('customer-phone-existing').value = customer.cusPhone || '';
+  document.getElementById('customer-address-existing').value = customer.cusAddress || '';
+  document.getElementById('customer-type-existing').value =
+    customer.cusType === true || customer.cusType === 'student'
+      ? 'student'
+      : 'regular';
+
+  document.getElementById('existing-customer-details').style.display = 'block';
+}
     function toggleBatch(id) {
       const body=document.getElementById(`batch-body-${id}`), icon=document.getElementById(`batch-toggle-icon-${id}`);
       const open=body.style.display!=='none';
@@ -1044,6 +1067,19 @@
     }
 
     window.addEventListener('load', loadData);
+    
+    //Input handling for auto-uppercase without disrupting cursor position
+    document.addEventListener('input', function (e) {
+  if (e.target.matches('input[type="text"], textarea')) {
+    const cursorPos = e.target.selectionStart;
+
+    e.target.value = e.target.value.toUpperCase();
+
+    if (cursorPos !== null) {
+      e.target.setSelectionRange(cursorPos, cursorPos);
+    }
+  }
+});
   </script>
 </body>
 </html>
