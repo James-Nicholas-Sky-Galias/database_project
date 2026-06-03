@@ -998,10 +998,11 @@
 
       try {
         let customer=existingID?state.customers.find(c=>String(c.cusID)===String(existingID)):state.customers.find(c=>c.cusPhone===cusPhone);
-        let cusID, loyaltyPts=0, freeCredit=0;
+        let cusID;
+        const freeCredit = customer ? (customer.freeServiceCredit||0) : 0;
 
         if(customer){
-          cusID=customer.cusID; loyaltyPts=customer.loyaltyPoints||0; freeCredit=customer.freeServiceCredit||0;
+          cusID=customer.cusID;
           const upd={};
           if(customer.cusName!==cusName) upd.cusName=cusName;
           if(customer.cusAddress!==cusAddress) upd.cusAddress=cusAddress;
@@ -1018,8 +1019,6 @@
           for(const sid of allServiceIDs){ const s=state.services.find(x=>x.serviceID===sid); if(s){ const p=parseFloat(cusType?s.servicePriceSTUD:s.servicePrice); if(!cheapest||p<cheapest.price) cheapest={price:p,name:s.serviceName}; } }
           if(cheapest){ discount=cheapest.price; freeName=cheapest.name; freeCredit-=1; }
         }
-        loyaltyPts+=1; let earnedFree=false;
-        if(loyaltyPts>=10){ loyaltyPts=0; freeCredit+=1; earnedFree=true; }
 
         const amtToPay=parseFloat((totalAmount-discount).toFixed(2));
         if(payMethod==='cash'&&amtGiven<amtToPay){ showToast(`Amount given (₱${amtGiven.toFixed(2)}) must be ≥ total (₱${amtToPay.toFixed(2)})`); return; }
@@ -1042,11 +1041,8 @@
         const returnMethod = window._isDelivery ? 'delivery' : 'walkin';
         await apiCall('/return', 'POST', { orderID, method: returnMethod, deliveryAddress: delivAddr || null });
 
-        await apiCall(`/customers/${cusID}`,'PATCH',{loyaltyPoints:loyaltyPts,freeServiceCredit:freeCredit});
-
         let msg=payMethod==='paylater'?'Order created! Payment pending.':'Order created and payment processed!';
         if(freeName) msg+=` Free service applied: ${freeName}.`;
-        if(earnedFree) msg+=' 🎉 Earned 1 free service credit!';
         showToast(msg); await loadData(); goTo('orders');
       } catch(err){ showToast('Failed to create order: '+err.message); console.error(err); }
     }
