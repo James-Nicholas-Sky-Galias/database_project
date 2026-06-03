@@ -35,9 +35,9 @@ async function addPoints(cusID, pointsToAdd) {
   let loyaltyPoints = (customer.loyaltyPoints || 0) + pointsToAdd;
   let freeServiceCredit = customer.freeServiceCredit || 0;
 
-  if (loyaltyPoints >= 10) {
-    freeServiceCredit += Math.floor(loyaltyPoints / 10);
-    loyaltyPoints %= 10;
+  if (loyaltyPoints >= 9) {
+    freeServiceCredit += Math.floor(loyaltyPoints / 9);
+    loyaltyPoints %= 9;
   }
 
   await q(

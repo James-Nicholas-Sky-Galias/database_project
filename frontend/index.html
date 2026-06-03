@@ -1013,20 +1013,17 @@
           cusID=cr.cusID; if(!cusID) throw new Error('Failed to create customer');
         }
 
-        let discount=0, freeName='';
-        if(freeCredit>0&&allServiceIDs.size>0){
-          let cheapest=null;
-          for(const sid of allServiceIDs){ const s=state.services.find(x=>x.serviceID===sid); if(s){ const p=parseFloat(cusType?s.servicePriceSTUD:s.servicePrice); if(!cheapest||p<cheapest.price) cheapest={price:p,name:s.serviceName}; } }
-          if(cheapest){ discount=cheapest.price; freeName=cheapest.name; freeCredit-=1; }
+        let isFreeOrder = freeCredit > 0;
+        if(isFreeOrder) {
+          await apiCall(`/customers/${cusID}`,'PATCH',{freeServiceCredit: freeCredit - 1});
         }
 
-        const amtToPay=parseFloat((totalAmount-discount).toFixed(2));
-        if(payMethod==='cash'&&amtGiven<amtToPay){ showToast(`Amount given (₱${amtGiven.toFixed(2)}) must be ≥ total (₱${amtToPay.toFixed(2)})`); return; }
+        const amtToPay = isFreeOrder ? 0 : parseFloat(totalAmount.toFixed(2));
+       if(payMethod==='cash'&&!isFreeOrder&&amtGiven<amtToPay){ showToast(`Amount given (₱${amtGiven.toFixed(2)}) must be ≥ total (₱${amtToPay.toFixed(2)})`); return; }
         const change=payMethod==='cash'?parseFloat((amtGiven-amtToPay).toFixed(2)):0;
 
         const noteParts=[`BATCHES:${JSON.stringify(batchNotes)}`];
         if(notes) noteParts.push(`Instructions: ${notes}`);
-        if(freeName) noteParts.push(`Free: ${freeName}`);
 
         const {orderID}=await apiCall('/orders','POST',{cusID,loadWeightKG:totalWeight,serviceIDs:Array.from(allServiceIDs),notes:noteParts.join(' | ')});
         const {invoiceID}=await apiCall('/invoices','POST',{orderID,amountToPay:amtToPay});
@@ -1041,8 +1038,7 @@
         const returnMethod = window._isDelivery ? 'delivery' : 'walkin';
         await apiCall('/return', 'POST', { orderID, method: returnMethod, deliveryAddress: delivAddr || null });
 
-        let msg=payMethod==='paylater'?'Order created! Payment pending.':'Order created and payment processed!';
-        if(freeName) msg+=` Free service applied: ${freeName}.`;
+        let msg = isFreeOrder ? 'Order created! Free wash credit applied — this order is FREE! 🎉' : payMethod==='paylater' ? 'Order created! Payment pending.' : 'Order created and payment processed!';
         showToast(msg); await loadData(); goTo('orders');
       } catch(err){ showToast('Failed to create order: '+err.message); console.error(err); }
     }
