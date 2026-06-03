@@ -206,7 +206,10 @@
       .date-card .day { font-size:36px; }
       .history-menu-grid, .infoboard-grid, .order-grid, .order-grid-2, .order-grid-name { grid-template-columns:1fr; }
     }
-  </style>
+    /* Remove number input spinners (WebKit + Firefox) */
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; appearance: textfield; }  </style>
 </head>
 <body>
 
@@ -222,7 +225,7 @@
         </div>
         <div class="right-buttons">
           <button class="place-order-btn" onclick="goTo('new-order')"><span>PLACE ORDER</span><span class="plus-icon">+</span></button>
-          <button class="sec-btn" onclick="goTo('history')">HISTORY</button>
+          <button class="sec-btn" onclick="goTo('history')">TRANSACTION HISTORY</button>
           <button class="sec-btn" onclick="goTo('orders')">ORDER MANAGEMENT</button>
         </div>
       </div>
@@ -241,7 +244,7 @@
   <div id="page-history" class="page">
     <div class="subpage-header">
       <button class="back-btn" onclick="goTo('home')"><i class="fa-solid fa-arrow-left"></i></button>
-      <span class="subpage-title">History</span>
+      <span class="subpage-title">TransactionHistory</span>
       <img class="subpage-logo" src="./JomitchLogo.png" alt="Jomitch">
     </div>
     <div class="content-wrap" style="max-width:560px;">
@@ -263,8 +266,8 @@
     <div class="content-wrap">
       <div class="card" style="overflow-x:auto;">
         <table class="table">
-          <thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Address</th><th>Type</th><th>Points</th><th>Free Credits</th></tr></thead>
-          <tbody id="customers-tbody"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px;">Loading...</td></tr></tbody>
+          <thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Address</th><th>Type</th><th>Points</th><th>Free Credits</th><th>Actions</th></tr></thead>
+          <tbody id="customers-tbody"><tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px;">Loading...</td></tr></tbody>
         </table>
       </div>
       <div class="pagination">
@@ -404,7 +407,7 @@
 
       <div id="existing-customer-section">
         <div class="order-grid-2" style="margin-bottom:10px;">
-          <div class="order-field-btn"><input type="text" id="customer-name-existing" placeholder="FULL NAME"></div>
+          <div class="order-field-btn"><input type="text" id="customer-name-existing" placeholder="FULL NAME"  list="customer-list" oninput="autoFillCustomer()"></div>
           <button class="btn" style="background:var(--accent-blue);font-size:14px;border-radius:12px;padding:0 16px;" onclick="lookupCustomerByName()"><i class="fa-solid fa-magnifying-glass"></i> FIND CUSTOMER</button>
         </div>
         <div id="customer-search-status" style="font-size:13px;color:var(--text-muted);margin-bottom:10px;min-height:18px;"></div>
@@ -425,9 +428,9 @@
 
       <div id="new-customer-section" style="display:none;">
         <div class="order-grid-name" style="margin-bottom:10px;">
-          <div class="order-field-btn"><input type="text" id="customer-fname" placeholder="FIRST NAME" oninput="this.value=this.value.replace(/[^a-zA-Z\s]/g,'')"></div>
-          <div class="order-field-btn"><input type="text" id="customer-lname" placeholder="LAST NAME" oninput="this.value=this.value.replace(/[^a-zA-Z\s]/g,'')"></div>
-          <div class="order-field-btn"><input type="text" id="customer-mi" placeholder="M.I." oninput="this.value=this.value.replace(/[^a-zA-Z\s]/g,'')"></div>
+          <div class="order-field-btn"><input type="text" id="customer-fname" placeholder="FIRST NAME" oninput="this.value=this.value.replace(/[^a-zA-Z\s]/g,'').toUpperCase()"></div>
+          <div class="order-field-btn"><input type="text" id="customer-lname" placeholder="LAST NAME" oninput="this.value=this.value.replace(/[^a-zA-Z\s]/g,'').toUpperCase()"></div>
+          <div class="order-field-btn"><input type="text" id="customer-mi" placeholder="M.I." oninput="this.value=this.value.replace(/[^a-zA-Z\s]/g,'').toUpperCase()"></div>
         </div>
         <div class="order-grid" style="margin-bottom:10px;">
           <div class="order-field-btn" style="grid-column:span 2/span 2;"><input type="text" id="customer-address-new" placeholder="ADDRESS" style="width:100%;"></div>
@@ -466,6 +469,15 @@
             <button class="stepper-btn" onclick="setDelivery(false)">▼</button>
           </div>
         </div>
+
+        <div class="order-field-btn" style="align-items:center;">
+          <span style="margin-right:auto;">Order Type: <span id="dropoff-status-span">WALK-IN</span></span>
+          <div style="display:flex;gap:10px;align-items:center;margin-left:8px;">
+            <label style="display:flex;align-items:center;gap:6px;color:var(--text-muted);font-size:10px;"><input type="radio" name="dropoff" id="dropoff-onsite-radio" value="walkin" checked onchange="setDropoff('walkin')"> walk-in</label>
+            <label style="display:flex;align-items:center;gap:6px;color:var(--text-muted);font-size:10px;"><input type="radio" name="dropoff" id="dropoff-pickup-radio" value="pickup" onchange="setDropoff('pickup')"> Pickup</label>
+          </div>
+        </div>
+
         <div class="order-field-btn" style="flex-direction:column;align-items:flex-start;gap:4px;cursor:default;">
           <span style="font-size:11px;color:var(--text-muted);letter-spacing:.08em;">DATE TO DELIVER/PICKUP:</span>
           <input type="date" id="order-date" style="background:transparent;border:none;outline:none;color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;width:100%;padding:0;cursor:pointer;">
@@ -478,6 +490,10 @@
 
       <div id="delivery-address-field" style="display:none;margin-bottom:10px;">
         <div class="order-field-btn"><input type="text" id="delivery-address" placeholder="DELIVERY ADDRESS" style="width:100%;"></div>
+      </div>
+
+      <div id="pickup-address-field" style="display:none;margin-bottom:10px;">
+        <div class="order-field-btn"><input type="text" id="pickup-address" placeholder="PICKUP ADDRESS (if pickup)" style="width:100%;"></div>
       </div>
 
       <div style="margin-bottom:10px;">
@@ -596,19 +612,23 @@
     async function loadData() {
       try {
         const [customers,services,orders] = await Promise.all([apiCall('/customers'),apiCall('/services'),apiCall('/orders')]);
-        state.customers = customers||[]; state.services = services||[]; state.orders = orders||[];
+        state.customers = (customers||[]).slice().sort((a,b)=>parseInt(a.cusID||0)-parseInt(b.cusID||0));
+        state.services = services||[]; state.orders = orders||[];
         updateInfoboard();
       } catch(e) { console.error('Load failed:',e); }
     }
 
   function updateInfoboard() {
-    const pending = state.orders.filter(o => !o.isDone);
-    document.getElementById('info-pickup-onsite').textContent  = pending.filter(o => o.returnMethod === 'walkin').length;
-    document.getElementById('info-delivery').textContent       = pending.filter(o => o.returnMethod === 'delivery').length;
-    document.getElementById('info-pickup-laundry').textContent = state.orders.filter(o => o.isDone).length;
+    const pending = state.orders.filter(o => parseInt(o.isDone) !== 1);
+    const pendingOnsite = pending.filter(o => o.returnMethod === 'walkin' || (o.returnMethod == null && !o.deliveryAddress)).length;
+    const pendingDelivery = pending.filter(o => o.returnMethod === 'delivery' || (!!o.deliveryAddress && o.returnMethod !== 'walkin')).length;
+    const completed    = state.orders.filter(o => parseInt(o.isDone) === 1).length;
+    document.getElementById('info-pickup-onsite').textContent  = pendingOnsite;
+    document.getElementById('info-delivery').textContent       = pendingDelivery;
+    document.getElementById('info-pickup-laundry').textContent = completed;
   }
 
-    const statusBadge = done  => done ? '<span class="badge badge-done">Done</span>' : '<span class="badge badge-pending">Pending</span>';
+    const statusBadge = done  => parseInt(done) === 1 ? '<span class="badge badge-done">Done</span>' : '<span class="badge badge-pending">Pending</span>';
     const typeBadge   = type  => (type===true||type==='student'||type===1) ? '<span class="badge badge-student">Student</span>' : '<span class="badge badge-regular">Regular</span>';
     const fmtDate     = val   => { if(!val) return ''; const d=new Date(val); return isNaN(d)?val:d.toLocaleString([],{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}); };
 
@@ -635,11 +655,20 @@
 
     /* ── CUSTOMERS ── */
     function renderCustomers() {
-      const {items,page,total} = paginate(state.customers, pages.cus); pages.cus=page;
+      const sorted = state.customers.slice().sort((a,b)=>parseInt(a.cusID||0)-parseInt(b.cusID||0));
+      const {items,page,total} = paginate(sorted, pages.cus); pages.cus=page;
       document.getElementById('customers-tbody').innerHTML = items.map(c => `
-        <tr><td>${c.cusID}</td><td>${c.cusName}</td><td>${c.cusPhone||''}</td><td>${c.cusAddress||''}</td>
-        <td>${typeBadge(c.cusType)}</td><td>${c.loyaltyPoints||0}</td><td>${c.freeServiceCredit||0}</td></tr>
-      `).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px;">No customers</td></tr>';
+        <tr>
+          <td>${c.cusID}</td>
+          <td>${c.cusName}</td>
+          <td>${c.cusPhone||''}</td>
+          <td>${c.cusAddress||''}</td>
+          <td>${typeBadge(c.cusType)}</td>
+          <td>${c.loyaltyPoints||0}</td>
+          <td>${c.freeServiceCredit||0}</td>
+          <td><button class="btn" style="background:#c0392b;" onclick="deleteCustomer(${c.cusID})"><i class="fa-solid fa-trash"></i></button></td>
+        </tr>
+      `).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px;">No customers</td></tr>';
       setPagination('cus',page,total);
     }
     function cusPage(d){ pages.cus+=d; renderCustomers(); }
@@ -730,7 +759,7 @@
 
     /* ── ORDERS ── */
     function renderOrders() {
-      const pending=state.orders.filter(o=>!o.isDone).length, done=state.orders.filter(o=>o.isDone).length;
+      const pending=state.orders.filter(o=>parseInt(o.isDone)!==1).length, done=state.orders.filter(o=>parseInt(o.isDone)===1).length;
       const unpaid=state.orders.filter(o=>parseInt(o.isPaid)!==1).length;
       document.getElementById('order-stats').innerHTML = [
         ['Total Orders',state.orders.length],['Pending',pending],['Completed',done],['Unpaid',unpaid,true]
@@ -785,6 +814,12 @@
       catch { showToast('Failed to delete order'); }
     }
 
+    async function deleteCustomer(id) {
+      if(!confirm('Delete this customer?')) return;
+      try { await apiCall(`/customers/${id}`,'DELETE'); showToast('Customer deleted'); await loadData(); renderCustomers(); }
+      catch { showToast('Failed to delete customer'); }
+    }
+
     async function updateOrderPayment(id,isPaid) {
       try { await apiCall(`/orders/${id}/payment`,'PATCH',{isPaid}); showToast(isPaid?'Marked as paid ✓':'Marked as unpaid'); await loadData(); renderOrders(); }
       catch(e) { showToast('Failed to update payment: '+e.message); }
@@ -826,6 +861,29 @@
       batches=batches.filter(b=>b.id!==id); renderBatches(); updateOrderSummary();
     }
 
+    function autoFillCustomer() {
+      const name = document
+      .getElementById('customer-name-existing')
+      .value
+      .trim()
+      .toUpperCase();
+
+      const customer = state.customers.find(
+      c => c.cusName.toUpperCase() === name
+      );
+
+  if (!customer) return;
+
+  document.getElementById('existing-customer-id').value = customer.cusID;
+  document.getElementById('customer-phone-existing').value = customer.cusPhone || '';
+  document.getElementById('customer-address-existing').value = customer.cusAddress || '';
+  document.getElementById('customer-type-existing').value =
+    customer.cusType === true || customer.cusType === 'student'
+      ? 'student'
+      : 'regular';
+
+  document.getElementById('existing-customer-details').style.display = 'block';
+}
     function toggleBatch(id) {
       const body=document.getElementById(`batch-body-${id}`), icon=document.getElementById(`batch-toggle-icon-${id}`);
       const open=body.style.display!=='none';
@@ -1100,6 +1158,19 @@
     }
 
     window.addEventListener('load', loadData);
+    
+    //Input handling for auto-uppercase without disrupting cursor position
+    document.addEventListener('input', function (e) {
+  if (e.target.matches('input[type="text"], textarea')) {
+    const cursorPos = e.target.selectionStart;
+
+    e.target.value = e.target.value.toUpperCase();
+
+    if (cursorPos !== null) {
+      e.target.setSelectionRange(cursorPos, cursorPos);
+    }
+  }
+});
   </script>
 </body>
 </html>
