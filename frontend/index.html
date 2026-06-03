@@ -491,7 +491,10 @@
         <div class="order-field-btn" style="justify-content:space-between;">
           <span style="color:var(--text-muted);font-size:13px;margin-right:8px;white-space:nowrap;">PAYMENT</span>
           <select class="order-select" id="payment-method" onchange="togglePaymentFields()">
-            <option value="cash">CASH</option><option value="ewallet">E-WALLET / CARD</option><option value="paylater">PAY LATER</option>
+            <option value="cash">CASH</option>
+            <option value="ewallet">E-WALLET / CARD</option>
+            <option value="partial">PARTIAL PAYMENT</option>
+            <option value="paylater">PAY LATER</option>
           </select>
         </div>
         <div id="cash-amount-field">
@@ -514,6 +517,26 @@
           <div>
             <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.08em;color:#ffd166;margin-bottom:2px;">PAY LATER — PAYMENT PENDING</div>
             <div style="font-size:12px;color:var(--text-muted);line-height:1.5;">Order will be created and marked as unpaid. Collect payment upon pickup or delivery.</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="partial-payment-fields" style="display:none;margin-bottom:10px;">
+        <div style="background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.25);border-radius:12px;padding:14px 18px;margin-bottom:10px;display:flex;align-items:flex-start;gap:12px;">
+          <i class="fa-solid fa-money-bill-wave" style="color:#ffd166;font-size:18px;flex-shrink:0;margin-top:2px;"></i>
+          <div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.08em;color:#ffd166;margin-bottom:2px;">PARTIAL PAYMENT</div>
+            <div style="font-size:12px;color:var(--text-muted);line-height:1.5;">Customer pays a portion now. Remaining balance will be marked as unpaid.</div>
+          </div>
+        </div>
+        <div class="order-grid-2">
+          <div class="order-field-btn">
+            <span style="color:var(--text-muted);font-size:13px;margin-right:10px;white-space:nowrap;">AMOUNT NOW</span>
+            <input type="number" id="partial-amount" step="0.01" min="0" placeholder="0.00" oninput="updatePartialBalance()" style="text-align:right;">
+          </div>
+          <div class="order-field-btn">
+            <span style="color:var(--text-muted);font-size:13px;margin-right:10px;white-space:nowrap;">BALANCE</span>
+            <input type="number" id="partial-balance" step="0.01" min="0" placeholder="0.00" readonly style="text-align:right;color:#ffd166;">
           </div>
         </div>
       </div>
@@ -730,7 +753,7 @@
           <td><div style="display:flex;flex-direction:column;gap:5px;">
             <button class="btn" style="background:${o.isDone?'#27ae60':'#e67e22'};" onclick="updateOrderStatus(${o.orderID},${!o.isDone})">${o.isDone?'Mark Pending':'Mark Done'}</button>
             ${paid?`<button class="btn" style="background:#8e44ad;white-space:nowrap;" onclick="updateOrderPayment(${o.orderID},false)"><i class="fa-solid fa-rotate-left"></i> Mark Unpaid</button>`
-                  :`<button class="btn" style="background:#27ae60;white-space:nowrap;" onclick="updateOrderPayment(${o.orderID},true)"><i class="fa-solid fa-money-bill"></i> Mark Paid</button>`}
+                  :`<button class="btn" style="background:#27ae60;white-space:nowrap;" onclick="collectBalance(${o.invoiceID},${parseFloat(o.invoiceAmount||0)},${parseFloat(o.amountPaid||0)})"><i class="fa-solid fa-money-bill"></i> ${parseFloat(o.invoiceAmount||0) > parseFloat(o.amountPaid||0) && parseFloat(o.amountPaid||0) > 0 ? 'Collect Balance' : 'Mark Paid'}</button>`}
           </div></td>
           <td><button class="btn" style="background:#c0392b;" onclick="deleteOrder(${o.orderID})"><i class="fa-solid fa-trash"></i></button></td>
         </tr>`;
@@ -765,6 +788,21 @@
     async function updateOrderPayment(id,isPaid) {
       try { await apiCall(`/orders/${id}/payment`,'PATCH',{isPaid}); showToast(isPaid?'Marked as paid ✓':'Marked as unpaid'); await loadData(); renderOrders(); }
       catch(e) { showToast('Failed to update payment: '+e.message); }
+    }
+
+    async function collectBalance(invoiceID, amountToPay, alreadyPaid) {
+      const remaining = amountToPay - alreadyPaid;
+      const input = remaining > 0
+        ? prompt(`Remaining balance: ₱${remaining.toFixed(2)}\nEnter amount to collect now (or full ₱${remaining.toFixed(2)}):`, remaining.toFixed(2))
+        : prompt(`Enter amount paid:`, amountToPay.toFixed(2));
+      if(input === null) return;
+      const amt = parseFloat(input);
+      if(isNaN(amt) || amt <= 0) { showToast('Invalid amount'); return; }
+      try {
+        const result = await apiCall(`/invoices/${invoiceID}/partial-payment`,'PATCH',{amountPaid:amt,paymentMethod:'cash'});
+        showToast(result.fullyPaid ? 'Invoice fully paid ✓' : `₱${amt.toFixed(2)} collected. ₱${result.remaining.toFixed(2)} still owed.`);
+        await loadData(); renderOrders();
+      } catch(e) { showToast('Failed: '+e.message); }
     }
 
     async function updateOrderStatus(id,isDone) {
@@ -878,14 +916,23 @@
       if(cel) cel.value=pm==='paylater'?'':Math.max(0,given-tp).toFixed(2);
     }
 
+    function updatePartialBalance() {
+      const tp = batches.reduce((s,b)=>s+computeBatchTotal(b),0);
+      const partialAmt = parseFloat(document.getElementById('partial-amount')?.value)||0;
+      const balance = Math.max(0, tp - partialAmt);
+      const balEl = document.getElementById('partial-balance');
+      if(balEl) balEl.value = tp > 0 ? balance.toFixed(2) : '0.00';
+      document.getElementById('total-price-display').textContent = `₱${tp.toFixed(2)}`;
+    }
+
     function initNewOrder() {
       window._isDelivery=false; window._customerMode='existing';
       window._dropoffMethod = 'walkin';
       const now=new Date(), pad=n=>String(n).padStart(2,'0');
       document.getElementById('order-date').value=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
       document.getElementById('order-time').value=`${pad(now.getHours())}:${pad(now.getMinutes())}`;
-      ['existing-customer-id','amount-given'].forEach(id=>document.getElementById(id).value='');
-      ['existing-customer-details','delivery-address-field','ewallet-fields','paylater-notice'].forEach(id=>document.getElementById(id).style.display='none');
+      ['existing-customer-id','amount-given','partial-amount','partial-balance'].forEach(id=>document.getElementById(id).value='');
+      ['existing-customer-details','delivery-address-field','ewallet-fields','paylater-notice','partial-payment-fields'].forEach(id=>document.getElementById(id).style.display='none');
       ['cash-amount-field','cash-change-field'].forEach(id=>document.getElementById(id).style.display='block');
       document.getElementById('customer-search-status').textContent='';
       document.getElementById('deliver-status-span').textContent='NO';
@@ -913,7 +960,9 @@
       document.getElementById('cash-amount-field').style.display=v==='cash'?'block':'none';
       document.getElementById('cash-change-field').style.display=v==='cash'?'block':'none';
       document.getElementById('paylater-notice').style.display=v==='paylater'?'block':'none';
+      document.getElementById('partial-payment-fields').style.display=v==='partial'?'block':'none';
       updateOrderSummary();
+      if(v==='partial') updatePartialBalance();
     }
 
     function selectCustomerMode(mode) {
@@ -965,6 +1014,7 @@
       const provider=document.getElementById('provider-name').value?.trim();
       const txnID=document.getElementById('transaction-id').value?.trim();
       const amtGiven=parseFloat(document.getElementById('amount-given').value);
+      const partialAmt=parseFloat(document.getElementById('partial-amount')?.value)||0;
 
       if(mode==='existing'&&!existingID){ showToast('Please find the existing customer first'); return; }
       if(!cusName){ showToast('Please enter customer name'); return; }
@@ -995,7 +1045,8 @@
       }
 
       if(payMethod==='cash'&&(isNaN(amtGiven)||amtGiven<0)){ showToast('Please enter the amount given'); return; }
-
+      if(payMethod==='partial'&&(isNaN(partialAmt)||partialAmt<=0)){ showToast('Please enter the partial amount'); return; }
+      
       try {
         let customer=existingID?state.customers.find(c=>String(c.cusID)===String(existingID)):state.customers.find(c=>c.cusPhone===cusPhone);
         let cusID;
@@ -1019,7 +1070,8 @@
         }
 
         const amtToPay = isFreeOrder ? 0 : parseFloat(totalAmount.toFixed(2));
-       if(payMethod==='cash'&&!isFreeOrder&&amtGiven<amtToPay){ showToast(`Amount given (₱${amtGiven.toFixed(2)}) must be ≥ total (₱${amtToPay.toFixed(2)})`); return; }
+        if(payMethod==='cash'&&!isFreeOrder&&amtGiven<amtToPay){ showToast(`Amount given (₱${amtGiven.toFixed(2)}) must be ≥ total (₱${amtToPay.toFixed(2)})`); return; }
+        if(payMethod==='partial'&&partialAmt>=amtToPay){ showToast('Partial amount must be less than the total. Use Cash or E-wallet for full payment.'); return; }
         const change=payMethod==='cash'?parseFloat((amtGiven-amtToPay).toFixed(2)):0;
 
         const noteParts=[`BATCHES:${JSON.stringify(batchNotes)}`];
@@ -1030,6 +1082,7 @@
 
         if(payMethod==='cash') await apiCall('/payments/cash','POST',{invoiceID,amountPaid:amtGiven,changeGiven:change});
         else if(payMethod==='ewallet') await apiCall('/payments/ewallet','POST',{invoiceID,providerName:provider,transactionID:txnID,amountPaid:amtToPay});
+        else if(payMethod==='partial') await apiCall(`/invoices/${invoiceID}/partial-payment`,'PATCH',{amountPaid:partialAmt,paymentMethod:'cash'});
 
         const dropoffMethod = window._dropoffMethod || 'walkin';
         const pickupAddr = document.getElementById('pickup-address')?.value?.trim() || null;
@@ -1038,7 +1091,10 @@
         const returnMethod = window._isDelivery ? 'delivery' : 'walkin';
         await apiCall('/return', 'POST', { orderID, method: returnMethod, deliveryAddress: delivAddr || null });
 
-        let msg = isFreeOrder ? 'Order created! Free wash credit applied — this order is FREE! 🎉' : payMethod==='paylater' ? 'Order created! Payment pending.' : 'Order created and payment processed!';
+        let msg = isFreeOrder ? 'Order created! Free wash credit applied — this order is FREE! 🎉'
+        : payMethod==='paylater' ? 'Order created! Payment pending.'
+        : payMethod==='partial' ? `Order created! ₱${partialAmt.toFixed(2)} paid. Balance: ₱${(amtToPay-partialAmt).toFixed(2)} remaining.`
+        : 'Order created and payment processed!';
         showToast(msg); await loadData(); goTo('orders');
       } catch(err){ showToast('Failed to create order: '+err.message); console.error(err); }
     }

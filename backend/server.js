@@ -107,10 +107,14 @@ SELECT
   c.cusName,
   c.cusType,
   svc.serviceNames,
+  r.method AS returnMethod,
   r.deliveryAddress,
+  d.method AS dropoffMethod,
+  d.pickupAddress,
   i.invoiceID,
   i.isPaid,
-  i.amountToPay AS invoiceAmount
+  i.amountToPay AS invoiceAmount,
+  COALESCE(cash.amountPaid, ew.amountPaid, 0) AS amountPaid
 
 FROM Order_Slip o
 
@@ -133,9 +137,10 @@ LEFT JOIN (
   ON o.orderID = svc.orderID
 
 LEFT JOIN OrderReturn r ON o.orderID = r.orderID
-
-LEFT JOIN Invoice i
-  ON o.orderID = i.orderID
+LEFT JOIN Dropoff d ON o.orderID = d.orderID
+LEFT JOIN Invoice i ON o.orderID = i.orderID
+LEFT JOIN Cash cash ON i.invoiceID = cash.CinvoiceID
+LEFT JOIN EWalletOrCard ew ON i.invoiceID = ew.EinvoiceID
 
 ORDER BY o.orderID DESC
 `)));
@@ -227,7 +232,7 @@ app.get ('/api/invoices', (_,res) => send(res, q(`
     COALESCE(i.invoiceDate,NOW()) AS invoiceDate,
     o.cusID, o.loadWeightKG, o.loadCount, o.isDone, o.notes,
     c.cusName, c.cusPhone,
-    COALESCE(cash.amountPaid,ew.amountPaid) AS amountPaid,
+    i.amountPaid AS amountPaid,
     COALESCE(cash.changeGiven,0) AS changeGiven,
     ew.providerName, ew.transactionID
   FROM Invoice i
@@ -245,13 +250,64 @@ app.post('/api/invoices', (req,res) => {
     .catch(e=>res.status(500).json({error:e.message}));
 });
 
+app.patch('/api/invoices/:id/partial-payment', async (req, res) => {
+  const { amountPaid, paymentMethod, providerName, transactionID } = req.body;
+  if (amountPaid == null || amountPaid <= 0)
+    return res.status(400).json({ error: 'amountPaid must be a positive number' });
+
+  try {
+    const [inv] = await q('SELECT * FROM Invoice WHERE invoiceID=?', [req.params.id]);
+    if (!inv) return res.status(404).json({ error: 'Invoice not found' });
+
+    const previouslyPaid = parseFloat(inv.amountPaid) || 0;
+    const newTotal = previouslyPaid + parseFloat(amountPaid);
+    const amountToPay = parseFloat(inv.amountToPay);
+    const fullyPaid = newTotal >= amountToPay;
+
+    if (paymentMethod === 'ewallet') {
+      if (!providerName || !transactionID)
+        return res.status(400).json({ error: 'providerName and transactionID required for ewallet' });
+      await q(
+        'INSERT INTO EWalletOrCard (EinvoiceID, providerName, transactionID, amountPaid) VALUES (?,?,?,?)',
+        [req.params.id, providerName, transactionID, amountPaid]
+      );
+    } else {
+
+      const changeGiven = newTotal > amountToPay ? newTotal - amountToPay : 0;
+      await q(
+        `INSERT INTO Cash (CinvoiceID, amountPaid, changeGiven) VALUES (?,?,?)
+         ON DUPLICATE KEY UPDATE amountPaid=VALUES(amountPaid), changeGiven=VALUES(changeGiven)`,
+        [req.params.id, amountPaid, changeGiven]
+      );
+    }
+
+    await q(
+      'UPDATE Invoice SET amountPaid=?, isPaid=? WHERE invoiceID=?',
+      [Math.min(newTotal, amountToPay), fullyPaid ? 1 : 0, req.params.id]
+    );
+
+    if (fullyPaid) {
+      const [order] = await q('SELECT cusID FROM Order_Slip WHERE orderID=?', [inv.orderID]);
+      if (order) await addPoints(order.cusID, 1);
+    }
+
+    res.json({
+      message: fullyPaid ? 'Invoice fully paid' : 'Partial payment recorded',
+      amountPaid: Math.min(newTotal, amountToPay),
+      remaining: Math.max(0, amountToPay - newTotal),
+      fullyPaid
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
 app.post('/api/payments/cash', async (req,res) => {
   const {invoiceID,amountPaid,changeGiven}=req.body;
   if(!invoiceID||amountPaid==null) return res.status(400).json({error:'invoiceID and amountPaid required'});
   try {
     await q('INSERT INTO Cash (CinvoiceID,amountPaid,changeGiven) VALUES (?,?,?)',[invoiceID,amountPaid,changeGiven??0]);
-    await q('UPDATE Invoice SET isPaid=true WHERE invoiceID=?',[invoiceID]);
+    await q('UPDATE Invoice SET amountPaid=amountToPay, isPaid=true WHERE invoiceID=?', [invoiceID]);
     const [inv] = await q('SELECT o.cusID FROM Invoice i JOIN Order_Slip o ON i.orderID=o.orderID WHERE i.invoiceID=?',[invoiceID]);
     if(inv) await addPoints(inv.cusID, 1);
     res.status(201).json({message:'Cash payment recorded'});
@@ -263,7 +319,7 @@ app.post('/api/payments/ewallet', async (req,res) => {
   if(!invoiceID||!providerName||!transactionID||amountPaid==null) return res.status(400).json({error:'invoiceID, providerName, transactionID, amountPaid required'});
   try {
     await q('INSERT INTO EWalletOrCard (EinvoiceID,providerName,transactionID,amountPaid) VALUES (?,?,?,?)',[invoiceID,providerName,transactionID,amountPaid]);
-    await q('UPDATE Invoice SET isPaid=true WHERE invoiceID=?',[invoiceID]);
+    await q('UPDATE Invoice SET amountPaid=amountToPay, isPaid=true WHERE invoiceID=?', [invoiceID]);
     const [inv] = await q('SELECT o.cusID FROM Invoice i JOIN Order_Slip o ON i.orderID=o.orderID WHERE i.invoiceID=?',[invoiceID]);
     if(inv) await addPoints(inv.cusID, 1);
     res.status(201).json({message:'E-wallet/card payment recorded'});

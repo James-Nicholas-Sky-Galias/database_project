@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS Invoice
 (
     invoiceID int(255) NOT NULL AUTO_INCREMENT,
     amountToPay decimal(10,2),
+    amountPaid decimal(10,2) DEFAULT 0,
     orderID int(255),
     invoiceDate datetime default now(),
     isPaid boolean DEFAULT false,
