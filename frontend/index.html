@@ -1140,7 +1140,7 @@
       try {
         let customer=existingID?state.customers.find(c=>String(c.cusID)===String(existingID)):state.customers.find(c=>c.cusPhone===cusPhone);
         let cusID;
-        const freeCredit = customer ? (customer.freeServiceCredit||0) : 0;
+        let freeCredit = customer ? (customer.freeServiceCredit||0) : 0;
 
         if(customer){
           cusID=customer.cusID;
