@@ -234,7 +234,6 @@
         <div class="infoboard-grid">
           <div class="info-card" onclick="goToFilteredOrders('onsite')"><div class="info-number" id="info-pickup-onsite">—</div><div class="info-label">To Pick Up Onsite</div></div>
           <div class="info-card" onclick="goToFilteredOrders('delivery')"><div class="info-number" id="info-delivery">—</div><div class="info-label">Delivery</div></div>
-          <div class="info-card" onclick="goToFilteredOrders('completed')"><div class="info-number" id="info-pickup-laundry">—</div><div class="info-label">To Pick Up Laundry</div></div>
         </div>
       </div>
     </div>
@@ -484,11 +483,11 @@
         </div>
 
         <div class="order-field-btn" style="flex-direction:column;align-items:flex-start;gap:4px;cursor:default;">
-          <span style="font-size:11px;color:var(--text-muted);letter-spacing:.08em;">DATE TO DELIVER/PICKUP:</span>
+          <span style="font-size:11px;color:var(--text-muted);letter-spacing:.08em;">DATE TO DELIVER:</span>
           <input type="date" id="order-date" style="background:transparent;border:none;outline:none;color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;width:100%;padding:0;cursor:pointer;">
         </div>
         <div class="order-field-btn" style="flex-direction:column;align-items:flex-start;gap:4px;cursor:default;">
-          <span style="font-size:11px;color:var(--text-muted);letter-spacing:.08em;">TIME TO DELIVER/PICKUP:</span>
+          <span style="font-size:11px;color:var(--text-muted);letter-spacing:.08em;">TIME TO DELIVER:</span>
           <input type="time" id="order-time" style="background:transparent;border:none;outline:none;color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;width:100%;padding:0;cursor:pointer;">
         </div>
       </div>
@@ -498,7 +497,7 @@
       </div>
 
       <div id="pickup-address-field" style="display:none;margin-bottom:10px;">
-        <div class="order-field-btn"><input type="text" id="pickup-address" placeholder="PICKUP ADDRESS (if pickup)" style="width:100%;"></div>
+        <div class="order-field-btn"><input type="text" id="pickup-address" placeholder="PICKUP ADDRESS" style="width:100%;"></div>
       </div>
 
       <div style="margin-bottom:10px;">
@@ -625,13 +624,10 @@
     }
 
   function updateInfoboard() {
-    const pending = state.orders.filter(o => parseInt(o.isDone) !== 1);
-    const pendingOnsite = pending.filter(o => o.returnMethod === 'walkin' || (o.returnMethod == null && !o.deliveryAddress)).length;
-    const pendingDelivery = pending.filter(o => o.returnMethod === 'delivery' || (!!o.deliveryAddress && o.returnMethod !== 'walkin')).length;
-    const completed    = state.orders.filter(o => parseInt(o.isDone) === 1).length;
-    document.getElementById('info-pickup-onsite').textContent  = pendingOnsite;
-    document.getElementById('info-delivery').textContent       = pendingDelivery;
-    document.getElementById('info-pickup-laundry').textContent = completed;
+  const pickupOnsite = state.orders.filter(o => parseInt(o.isDone) !== 1 && (o.returnMethod === 'walkin' || (o.returnMethod == null && !o.deliveryAddress))).length;
+  const delivery     = state.orders.filter(o => parseInt(o.isDone) !== 1 && (o.returnMethod === 'delivery' || (!!o.deliveryAddress && o.returnMethod !== 'walkin'))).length;
+  document.getElementById('info-pickup-onsite').textContent = pickupOnsite;
+  document.getElementById('info-delivery').textContent      = delivery;
   }
 
     const statusBadge = done  => parseInt(done) === 1 ? '<span class="badge badge-done">Done</span>' : '<span class="badge badge-pending">Pending</span>';
@@ -787,18 +783,15 @@
       const filterBar = document.getElementById('order-filter-bar');
       const filterLabel = document.getElementById('order-filter-label');
       let filteredOrders = state.orders;
-      if(activeOrderFilter === 'onsite') {
-        filteredOrders = state.orders.filter(o => parseInt(o.isDone) !== 1 && (o.returnMethod === 'walkin' || (o.returnMethod == null && !o.deliveryAddress)));
-        filterBar.style.display = 'flex'; filterLabel.textContent = '🏠 Showing: Pending Onsite Pickup';
-      } else if(activeOrderFilter === 'delivery') {
-        filteredOrders = state.orders.filter(o => parseInt(o.isDone) !== 1 && (o.returnMethod === 'delivery' || (!!o.deliveryAddress && o.returnMethod !== 'walkin')));
-        filterBar.style.display = 'flex'; filterLabel.textContent = '🚚 Showing: Pending Delivery';
-      } else if(activeOrderFilter === 'completed') {
-        filteredOrders = state.orders.filter(o => parseInt(o.isDone) === 1);
-        filterBar.style.display = 'flex'; filterLabel.textContent = '✅ Showing: Completed Orders';
-      } else {
-        filterBar.style.display = 'none';
-      }
+     if(activeOrderFilter === 'onsite') {
+    filteredOrders = state.orders.filter(o => parseInt(o.isDone) !== 1 && (o.returnMethod === 'walkin' || (o.returnMethod == null && !o.deliveryAddress)));
+    filterBar.style.display = 'flex'; filterLabel.textContent = '🏠 Showing: Pending Onsite Pickup';
+    } else if(activeOrderFilter === 'delivery') {
+    filteredOrders = state.orders.filter(o => parseInt(o.isDone) !== 1 && (o.returnMethod === 'delivery' || (!!o.deliveryAddress && o.returnMethod !== 'walkin')));
+    filterBar.style.display = 'flex'; filterLabel.textContent = '🚚 Showing: Pending Delivery';
+    } else {
+    filterBar.style.display = 'none';
+    }
 
       const {items,page,total} = paginate(filteredOrders,pages.ord); pages.ord=page;
       document.getElementById('orders-tbody').innerHTML = items.map(o => {
