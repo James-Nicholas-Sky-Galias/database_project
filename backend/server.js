@@ -259,8 +259,7 @@ app.patch('/api/invoices/:id/partial-payment', async (req, res) => {
     const [inv] = await q('SELECT * FROM Invoice WHERE invoiceID=?', [req.params.id]);
     if (!inv) return res.status(404).json({ error: 'Invoice not found' });
 
-    const [cashRow] = await q('SELECT amountPaid FROM Cash WHERE CinvoiceID=?', [req.params.id]);
-    const previouslyPaid = cashRow ? parseFloat(cashRow.amountPaid) || 0 : parseFloat(inv.amountPaid) || 0;
+    const previouslyPaid = parseFloat(inv.amountPaid) || 0;
     const newTotal = previouslyPaid + parseFloat(amountPaid);
     const amountToPay = parseFloat(inv.amountToPay);
     const fullyPaid = newTotal >= amountToPay;
@@ -270,19 +269,18 @@ app.patch('/api/invoices/:id/partial-payment', async (req, res) => {
       if (!providerName || !transactionID)
         return res.status(400).json({ error: 'providerName and transactionID required for ewallet' });
       await q(
-        'INSERT INTO EWalletOrCard (EinvoiceID, providerName, transactionID, amountPaid) VALUES (?,?,?,?)',
-        [req.params.id, providerName, transactionID, amountPaid]
+        'INSERT INTO EWalletOrCard (EinvoiceID, providerName, transactionID, amountPaid) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE amountPaid=VALUES(amountPaid)',
+        [req.params.id, providerName, transactionID, actualPaid]
       );
     } else {
-
       const changeGiven = newTotal > amountToPay ? newTotal - amountToPay : 0;
       await q(
-        `INSERT INTO Cash (CinvoiceID, amountPaid, changeGiven) VALUES (?,?,?)
-         ON DUPLICATE KEY UPDATE amountPaid=VALUES(amountPaid), changeGiven=VALUES(changeGiven)`,
-        [req.params.id, amountPaid, changeGiven]
+        'INSERT INTO Cash (CinvoiceID, amountPaid, changeGiven) VALUES (?,?,?) ON DUPLICATE KEY UPDATE amountPaid=VALUES(amountPaid), changeGiven=VALUES(changeGiven)',
+        [req.params.id, actualPaid, changeGiven]
       );
     }
 
+    // Update Invoice.amountPaid to the running total
     await q(
       'UPDATE Invoice SET amountPaid=?, isPaid=? WHERE invoiceID=?',
       [actualPaid, fullyPaid ? 1 : 0, req.params.id]
@@ -295,7 +293,7 @@ app.patch('/api/invoices/:id/partial-payment', async (req, res) => {
 
     res.json({
       message: fullyPaid ? 'Invoice fully paid' : 'Partial payment recorded',
-      amountPaid: Math.min(newTotal, amountToPay),
+      amountPaid: actualPaid,
       remaining: Math.max(0, amountToPay - newTotal),
       fullyPaid
     });
