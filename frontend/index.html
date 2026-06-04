@@ -6,7 +6,7 @@
   <title>Jomitch Laundry Shop - Operations System</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
+  <script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=l6ctBxpg1MVKQSPsNgkBje1GOzYo-_VOE4bWoeu-FdX7adeGlCjKr-bPB4FaARiAhQfvXhtGaTmKbYy4mHwSE9jzaB70qnvoaeU6s_fwCiPiVJr1wm-Aovp804oHVC6esRWOKLpnDEYHaOo6uk2KriT9qCnFaB-9EBcwoex4qhTlUPEpt4Ev3znmVbIhViZoW5jI1DnMcDAZRF5O-R7cDe9pmTwv6jtONoNPnKWdWTicEqm797Ipa9v1qy-1z2Iui1ocJUslCdjxIsD5YEyzUeGkzQV9kiWsx8Z_FTkjTv3AIrmJBilXxh9klAgmKi3oOtPi50uji695TwnugGWPQS_KYNn-1dHU-7FBrTLKmFWtjj_zionCokXWH-nr67YiifHXDWPtOyLRxH_ngObwnM_czvv8j2SnevuzRGZjEi8BI3CwAjbuST5o2Mlf7yer6ZqzqjZNldms000zMVmr1vPxS9q1TRN8OBEWL2xMuWajybpFC5wETPN9zoEZy603tCNm0LEWqx6-cvXM2y7Msh4hDLXPJbcNZJpp4vZtB3JerDFaD7cutC2TlKnsOwRZFpwKQrn32OwyCI2yajbSGzIkRMAEbL5z-guHfahj_is64DZO2KDNm3WX6pUIotU41Sgz85IHRSJj4vWsNvElMtjLzlS9u2gGppi1FfQLkFfiZbe9Gk8ACdZOBcy48xBP" charset="UTF-8"></script><style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --navy:#0b1c3a; --navy-mid:#102241; --navy-card:#14294d; --navy-btn:#1a3a6b;
@@ -805,6 +805,7 @@
             ${o.dropoffMethod === 'pickup' ? `Pickup: ${o.pickupAddress||'—'}` : 'Walk-in'}
             → 
             ${o.returnMethod === 'delivery' ? `Deliver: ${o.deliveryAddress||'—'}` : 'Customer pickup'}
+            ${(() => { const m = (o.notes||'').match(/Instructions:\s*([^|]+)/); return m && m[1].trim() ? `<div style="margin-top:6px;display:flex;align-items:flex-start;gap:6px;background:rgba(255,209,102,.10);border:1px solid rgba(255,209,102,.28);border-radius:8px;padding:6px 10px;"><i class="fa-solid fa-comment-dots" style="color:#ffd166;font-size:12px;margin-top:2px;flex-shrink:0;"></i><span style="font-size:12px;color:#ffd166;font-style:italic;line-height:1.4;">${m[1].trim()}</span></div>` : ''; })()}
           </td>
           <td><div style="display:flex;flex-direction:column;gap:5px;">${statusBadge(o.isDone)}${paid?'<span class="badge badge-paid">Paid</span>':'<span class="badge badge-paylater">Unpaid</span>'}</div></td>
           <td><div style="display:flex;flex-direction:column;gap:5px;">
