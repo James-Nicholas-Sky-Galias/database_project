@@ -826,7 +826,7 @@
     }
 
     async function collectBalance(invoiceID, amountToPay, alreadyPaid) {
-      const remaining = amountToPay - alreadyPaid;
+      const remaining = Math.max(0, parseFloat(amountToPay) - parseFloat(alreadyPaid));
       const input = remaining > 0
         ? prompt(`Remaining balance: ₱${remaining.toFixed(2)}\nEnter amount to collect now (or full ₱${remaining.toFixed(2)}):`, remaining.toFixed(2))
         : prompt(`Enter amount paid:`, amountToPay.toFixed(2));
@@ -1128,8 +1128,8 @@
         }
 
         const amtToPay = isFreeOrder ? 0 : parseFloat(totalAmount.toFixed(2));
-        if(payMethod==='cash'&&!isFreeOrder&&amtGiven<amtToPay){ showToast(`Amount given (₱${amtGiven.toFixed(2)}) must be ≥ total (₱${amtToPay.toFixed(2)})`); return; }
         if(payMethod==='partial'&&partialAmt>=amtToPay){ showToast('Partial amount must be less than the total. Use Cash or E-wallet for full payment.'); return; }
+        if(payMethod==='cash'&&!isFreeOrder&&amtGiven<amtToPay){ showToast(`Amount given (₱${amtGiven.toFixed(2)}) must be ≥ total (₱${amtToPay.toFixed(2)})`); return; }
         const change=payMethod==='cash'?parseFloat((amtGiven-amtToPay).toFixed(2)):0;
 
         const noteParts=[`BATCHES:${JSON.stringify(batchNotes)}`];

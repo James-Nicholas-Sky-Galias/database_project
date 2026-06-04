@@ -259,10 +259,12 @@ app.patch('/api/invoices/:id/partial-payment', async (req, res) => {
     const [inv] = await q('SELECT * FROM Invoice WHERE invoiceID=?', [req.params.id]);
     if (!inv) return res.status(404).json({ error: 'Invoice not found' });
 
-    const previouslyPaid = parseFloat(inv.amountPaid) || 0;
+    const [cashRow] = await q('SELECT amountPaid FROM Cash WHERE CinvoiceID=?', [req.params.id]);
+    const previouslyPaid = cashRow ? parseFloat(cashRow.amountPaid) || 0 : parseFloat(inv.amountPaid) || 0;
     const newTotal = previouslyPaid + parseFloat(amountPaid);
     const amountToPay = parseFloat(inv.amountToPay);
     const fullyPaid = newTotal >= amountToPay;
+    const actualPaid = Math.min(newTotal, amountToPay);
 
     if (paymentMethod === 'ewallet') {
       if (!providerName || !transactionID)
@@ -283,7 +285,7 @@ app.patch('/api/invoices/:id/partial-payment', async (req, res) => {
 
     await q(
       'UPDATE Invoice SET amountPaid=?, isPaid=? WHERE invoiceID=?',
-      [Math.min(newTotal, amountToPay), fullyPaid ? 1 : 0, req.params.id]
+      [actualPaid, fullyPaid ? 1 : 0, req.params.id]
     );
 
     if (fullyPaid) {
