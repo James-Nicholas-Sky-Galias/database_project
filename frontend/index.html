@@ -226,15 +226,15 @@
         <div class="right-buttons">
           <button class="place-order-btn" onclick="goTo('new-order')"><span>PLACE ORDER</span><span class="plus-icon">+</span></button>
           <button class="sec-btn" onclick="goTo('history')">TRANSACTION HISTORY</button>
-          <button class="sec-btn" onclick="goTo('orders')">ORDER MANAGEMENT</button>
+          <button class="sec-btn" onclick="activeOrderFilter=null;goTo('orders')">ORDER MANAGEMENT</button>
         </div>
       </div>
       <div class="infoboard">
         <div class="infoboard-title">JOMITCH INFOBOARD</div>
         <div class="infoboard-grid">
-          <div class="info-card" onclick="goTo('orders')"><div class="info-number" id="info-pickup-onsite">—</div><div class="info-label">To Pick Up Onsite</div></div>
-          <div class="info-card" onclick="goTo('orders')"><div class="info-number" id="info-delivery">—</div><div class="info-label">Delivery</div></div>
-          <div class="info-card" onclick="goTo('orders')"><div class="info-number" id="info-pickup-laundry">—</div><div class="info-label">To Pick Up Laundry</div></div>
+          <div class="info-card" onclick="goToFilteredOrders('onsite')"><div class="info-number" id="info-pickup-onsite">—</div><div class="info-label">To Pick Up Onsite</div></div>
+          <div class="info-card" onclick="goToFilteredOrders('delivery')"><div class="info-number" id="info-delivery">—</div><div class="info-label">Delivery</div></div>
+          <div class="info-card" onclick="goToFilteredOrders('completed')"><div class="info-number" id="info-pickup-laundry">—</div><div class="info-label">To Pick Up Laundry</div></div>
         </div>
       </div>
     </div>
@@ -373,10 +373,15 @@
   <!-- ORDERS -->
   <div id="page-orders" class="page">
     <div class="subpage-header">
-      <button class="back-btn" onclick="goTo('home')"><i class="fa-solid fa-arrow-left"></i></button>
+      <button class="back-btn" onclick="activeOrderFilter=null;goTo('home')"><i class="fa-solid fa-arrow-left"></i></button>
       <span class="subpage-title">Order Management</span>
+      <img class="subpage-logo" src="./JomitchLogo.png" alt="Jomitch">
     </div>
     <div class="content-wrap">
+      <div id="order-filter-bar" style="display:none;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span id="order-filter-label" style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:.1em;text-transform:uppercase;background:rgba(76,184,228,.12);color:var(--accent-cyan);border:1px solid rgba(76,184,228,.3);padding:6px 14px;border-radius:8px;"></span>
+        <button class="btn" onclick="clearOrderFilter()" style="font-size:13px;padding:6px 14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);"><i class="fa-solid fa-xmark"></i> Show All Orders</button>
+      </div>
       <div class="stat-row" id="order-stats"></div>
       <div style="overflow-x:auto;">
         <table class="table">
@@ -579,6 +584,7 @@
     let state = { customers:[], services:[], orders:[], invoices:[] };
     let pages = { cus:1, svc:1, ord:1, inv:1, loy:1 };
     let batches = [], batchCounter = 0;
+    let activeOrderFilter = null; // null = all, 'onsite', 'delivery', 'completed'
 
     const ALL_PAGES = ['home','history','customers','services','loyalty','sales','orders','new-order'];
     const PAGE_LOAD = { customers:renderCustomers, services:renderServices, loyalty:renderLoyalty, sales:renderSales, orders:renderOrders, 'new-order':initNewOrder };
@@ -757,6 +763,18 @@
     }
     function invPage(d){ pages.inv+=d; renderSales(); }
 
+    function goToFilteredOrders(filter) {
+      activeOrderFilter = filter;
+      pages.ord = 1;
+      goTo('orders');
+    }
+
+    function clearOrderFilter() {
+      activeOrderFilter = null;
+      pages.ord = 1;
+      renderOrders();
+    }
+
     /* ── ORDERS ── */
     function renderOrders() {
       const pending=state.orders.filter(o=>parseInt(o.isDone)!==1).length, done=state.orders.filter(o=>parseInt(o.isDone)===1).length;
@@ -765,7 +783,24 @@
         ['Total Orders',state.orders.length],['Pending',pending],['Completed',done],['Unpaid',unpaid,true]
       ].map(([l,v,w])=>`<div class="card"><div class="card-label">${l}</div><div class="card-value"${w?' style="color:#ffd166;"':''}>${v}</div></div>`).join('');
 
-      const {items,page,total} = paginate(state.orders,pages.ord); pages.ord=page;
+      // Apply infoboard filter
+      const filterBar = document.getElementById('order-filter-bar');
+      const filterLabel = document.getElementById('order-filter-label');
+      let filteredOrders = state.orders;
+      if(activeOrderFilter === 'onsite') {
+        filteredOrders = state.orders.filter(o => parseInt(o.isDone) !== 1 && (o.returnMethod === 'walkin' || (o.returnMethod == null && !o.deliveryAddress)));
+        filterBar.style.display = 'flex'; filterLabel.textContent = '🏠 Showing: Pending Onsite Pickup';
+      } else if(activeOrderFilter === 'delivery') {
+        filteredOrders = state.orders.filter(o => parseInt(o.isDone) !== 1 && (o.returnMethod === 'delivery' || (!!o.deliveryAddress && o.returnMethod !== 'walkin')));
+        filterBar.style.display = 'flex'; filterLabel.textContent = '🚚 Showing: Pending Delivery';
+      } else if(activeOrderFilter === 'completed') {
+        filteredOrders = state.orders.filter(o => parseInt(o.isDone) === 1);
+        filterBar.style.display = 'flex'; filterLabel.textContent = '✅ Showing: Completed Orders';
+      } else {
+        filterBar.style.display = 'none';
+      }
+
+      const {items,page,total} = paginate(filteredOrders,pages.ord); pages.ord=page;
       document.getElementById('orders-tbody').innerHTML = items.map(o => {
         const paid=parseInt(o.isPaid)===1;
         return `<tr>
