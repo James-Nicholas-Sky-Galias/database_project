@@ -231,7 +231,7 @@
       </div>
       <div class="infoboard">
         <div class="infoboard-title">JOMITCH INFOBOARD</div>
-        <div class="infoboard-grid">
+        <div class="infoboard-grid" style="grid-template-columns:1fr 1fr;">
           <div class="info-card" onclick="goToFilteredOrders('onsite')"><div class="info-number" id="info-pickup-onsite">—</div><div class="info-label">To Pick Up Onsite</div></div>
           <div class="info-card" onclick="goToFilteredOrders('delivery')"><div class="info-number" id="info-delivery">—</div><div class="info-label">Delivery</div></div>
         </div>
@@ -493,7 +493,7 @@
       </div>
 
       <div id="pickup-address-field" style="display:none;margin-bottom:10px;">
-        <div class="order-field-btn"><input type="text" id="pickup-address" placeholder="PICKUP ADDRESS" style="width:100%;"></div>
+        <div class="order-field-btn"><input type="text" id="pickup-address" placeholder="PICKUP ADDRESS (if pickup)" style="width:100%;"></div>
       </div>
 
       <div style="margin-bottom:10px;">
@@ -620,10 +620,11 @@
     }
 
   function updateInfoboard() {
-  const pickupOnsite = state.orders.filter(o => parseInt(o.isDone) !== 1 && (o.returnMethod === 'walkin' || (o.returnMethod == null && !o.deliveryAddress))).length;
-  const delivery     = state.orders.filter(o => parseInt(o.isDone) !== 1 && (o.returnMethod === 'delivery' || (!!o.deliveryAddress && o.returnMethod !== 'walkin'))).length;
-  document.getElementById('info-pickup-onsite').textContent = pickupOnsite;
-  document.getElementById('info-delivery').textContent      = delivery;
+    const pending = state.orders.filter(o => parseInt(o.isDone) !== 1);
+    const pendingOnsite = pending.filter(o => o.returnMethod === 'walkin' || (o.returnMethod == null && !o.deliveryAddress)).length;
+    const pendingDelivery = pending.filter(o => o.returnMethod === 'delivery' || (!!o.deliveryAddress && o.returnMethod !== 'walkin')).length;
+    document.getElementById('info-pickup-onsite').textContent  = pendingOnsite;
+    document.getElementById('info-delivery').textContent       = pendingDelivery;
   }
 
     const statusBadge = done  => parseInt(done) === 1 ? '<span class="badge badge-done">Done</span>' : '<span class="badge badge-pending">Pending</span>';
@@ -779,15 +780,18 @@
       const filterBar = document.getElementById('order-filter-bar');
       const filterLabel = document.getElementById('order-filter-label');
       let filteredOrders = state.orders;
-     if(activeOrderFilter === 'onsite') {
-    filteredOrders = state.orders.filter(o => parseInt(o.isDone) !== 1 && (o.returnMethod === 'walkin' || (o.returnMethod == null && !o.deliveryAddress)));
-    filterBar.style.display = 'flex'; filterLabel.textContent = '🏠 Showing: Pending Onsite Pickup';
-    } else if(activeOrderFilter === 'delivery') {
-    filteredOrders = state.orders.filter(o => parseInt(o.isDone) !== 1 && (o.returnMethod === 'delivery' || (!!o.deliveryAddress && o.returnMethod !== 'walkin')));
-    filterBar.style.display = 'flex'; filterLabel.textContent = '🚚 Showing: Pending Delivery';
-    } else {
-    filterBar.style.display = 'none';
-    }
+      if(activeOrderFilter === 'onsite') {
+        filteredOrders = state.orders.filter(o => parseInt(o.isDone) !== 1 && (o.returnMethod === 'walkin' || (o.returnMethod == null && !o.deliveryAddress)));
+        filterBar.style.display = 'flex'; filterLabel.textContent = '🏠 Showing: Pending Onsite Pickup';
+      } else if(activeOrderFilter === 'delivery') {
+        filteredOrders = state.orders.filter(o => parseInt(o.isDone) !== 1 && (o.returnMethod === 'delivery' || (!!o.deliveryAddress && o.returnMethod !== 'walkin')));
+        filterBar.style.display = 'flex'; filterLabel.textContent = '🚚 Showing: Pending Delivery';
+      } else if(activeOrderFilter === 'completed') {
+        filteredOrders = state.orders.filter(o => parseInt(o.isDone) === 1);
+        filterBar.style.display = 'flex'; filterLabel.textContent = '✅ Showing: Completed Orders';
+      } else {
+        filterBar.style.display = 'none';
+      }
 
       const {items,page,total} = paginate(filteredOrders,pages.ord); pages.ord=page;
       document.getElementById('orders-tbody').innerHTML = items.map(o => {
