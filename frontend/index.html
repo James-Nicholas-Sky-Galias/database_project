@@ -782,13 +782,13 @@
       let filteredOrders = state.orders;
       if(activeOrderFilter === 'onsite') {
         filteredOrders = state.orders.filter(o => parseInt(o.isDone) !== 1 && (o.returnMethod === 'walkin' || (o.returnMethod == null && !o.deliveryAddress)));
-        filterBar.style.display = 'flex'; filterLabel.textContent = '🏠 Showing: Pending Onsite Pickup';
+        filterBar.style.display = 'flex'; filterLabel.textContent = 'Showing: Pending Onsite Pickup';
       } else if(activeOrderFilter === 'delivery') {
         filteredOrders = state.orders.filter(o => parseInt(o.isDone) !== 1 && (o.returnMethod === 'delivery' || (!!o.deliveryAddress && o.returnMethod !== 'walkin')));
-        filterBar.style.display = 'flex'; filterLabel.textContent = '🚚 Showing: Pending Delivery';
+        filterBar.style.display = 'flex'; filterLabel.textContent = 'Showing: Pending Delivery';
       } else if(activeOrderFilter === 'completed') {
         filteredOrders = state.orders.filter(o => parseInt(o.isDone) === 1);
-        filterBar.style.display = 'flex'; filterLabel.textContent = '✅ Showing: Completed Orders';
+        filterBar.style.display = 'flex'; filterLabel.textContent = 'Showing: Completed Orders';
       } else {
         filterBar.style.display = 'none';
       }
@@ -1222,7 +1222,7 @@
         }
 
         const totalMsg = freeBatchSlots >= batches.length
-          ? 'Free wash credit applied — this order is FREE! 🎉'
+          ? 'Free wash credit applied — this order is FREE!'
           : payMethod==='paylater'
             ? 'Order created! Payment pending.'
             : payMethod==='partial'
