@@ -197,7 +197,7 @@ app.patch('/api/orders/:id/payment', async (req,res) => {
       if(!existing.length) await q('INSERT INTO Cash (CinvoiceID,amountPaid,changeGiven) VALUES (?,?,0)',[invoiceID,amountToPay]);
       await q('UPDATE Invoice SET isPaid=true WHERE invoiceID=?',[invoiceID]);
       const [order] = await q('SELECT cusID FROM Order_Slip WHERE orderID=?',[req.params.id]);
-      if(order) await addPoints(order.cusID, 1);
+      if(order && parseFloat(amountToPay) > 0) await addPoints(order.cusID, 1);
     } else {
       await q('DELETE FROM Cash WHERE CinvoiceID=?',[invoiceID]);
       await q('DELETE FROM EWalletOrCard WHERE EinvoiceID=?',[invoiceID]);
@@ -308,8 +308,10 @@ app.post('/api/payments/cash', async (req,res) => {
   try {
     await q('INSERT INTO Cash (CinvoiceID,amountPaid,changeGiven) VALUES (?,?,?)',[invoiceID,amountPaid,changeGiven??0]);
     await q('UPDATE Invoice SET amountPaid=amountToPay, isPaid=true WHERE invoiceID=?', [invoiceID]);
-    const [inv] = await q('SELECT o.cusID FROM Invoice i JOIN Order_Slip o ON i.orderID=o.orderID WHERE i.invoiceID=?',[invoiceID]);
-    if(inv) await addPoints(inv.cusID, 1);
+    if(parseFloat(amountPaid) > 0) {  // only add points if actually paid
+      const [inv] = await q('SELECT o.cusID FROM Invoice i JOIN Order_Slip o ON i.orderID=o.orderID WHERE i.invoiceID=?',[invoiceID]);
+      if(inv) await addPoints(inv.cusID, 1);
+    }
     res.status(201).json({message:'Cash payment recorded'});
   } catch(e){res.status(500).json({error:e.message});}
 });
@@ -320,8 +322,10 @@ app.post('/api/payments/ewallet', async (req,res) => {
   try {
     await q('INSERT INTO EWalletOrCard (EinvoiceID,providerName,transactionID,amountPaid) VALUES (?,?,?,?)',[invoiceID,providerName,transactionID,amountPaid]);
     await q('UPDATE Invoice SET amountPaid=amountToPay, isPaid=true WHERE invoiceID=?', [invoiceID]);
+    if(parseFloat(amountPaid) > 0) {
     const [inv] = await q('SELECT o.cusID FROM Invoice i JOIN Order_Slip o ON i.orderID=o.orderID WHERE i.invoiceID=?',[invoiceID]);
     if(inv) await addPoints(inv.cusID, 1);
+  }
     res.status(201).json({message:'E-wallet/card payment recorded'});
   } catch(e){res.status(500).json({error:e.message});}
 });
